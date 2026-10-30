@@ -1,26 +1,1070 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --font-sans: var(--font-sans-body), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-display: var(--font-display-face), var(--font-sans-body), ui-sans-serif,
+    system-ui, sans-serif;
+  --font-serif: var(--font-display-face), var(--font-sans-body), ui-sans-serif,
+    system-ui, sans-serif;
+  --font-data: var(--font-data-face), var(--font-sans-body), ui-sans-serif,
+    system-ui, sans-serif;
+
+  /* Brand navy | from the GLANCE mark (#05245E) */
+  --color-navy-50: #eff5fd;
+  --color-navy-100: #dbe8f8;
+  --color-navy-200: #bcd3ef;
+  --color-navy-300: #8fb2e0;
+  --color-navy-400: #5b88c6;
+  --color-navy-500: #2f60a5;
+  --color-navy-600: #12437f;
+  --color-navy-700: #06316d;
+  --color-navy-800: #04295a;
+  --color-navy-900: #0A2550;
+  --color-navy-950: #05245e;
+  /* Brand gold | from the GLANCE mark (#EAAE14) */
+  --color-gold-100: #fdf4da;
+  --color-gold-200: #fbe8a8;
+  --color-gold-300: #f9d775;
+  --color-gold-400: #fbca4b;
+  --color-gold-500: #eaae14;
+  --color-gold-600: #c68d09;
+
+  /* Neutrals for body copy and hairlines */
+  --color-ink-300: #9aa8bb;
+  --color-ink-400: #7c8ca3;
+  --color-ink-500: #5b6b81;
+  --color-ink-600: #46566d;
+  --color-ink-700: #33445c;
+  --color-line: #e3e9f1;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5.5rem;
+    -webkit-text-size-adjust: 100%;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    background-color: #ffffff;
+    color: var(--color-navy-900);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--color-gold-300);
+    color: var(--color-navy-900);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold-500);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.028em;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  .font-data,
+  .tabular {
+    font-family: var(--font-data);
+    font-variant-numeric: tabular-nums;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ------------------------------------------------------------------
+   Surface motion: a lift on hover and a light that crosses a card.
+   Only on real pointers, so touch screens never keep a hover state.
+   ------------------------------------------------------------------ */
+
+.lift {
+  transition:
+    transform 420ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 420ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    border-color 220ms ease;
 }
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 30px 60px -40px rgba(5, 37, 80, 0.55);
+  }
+}
+
+.sheen {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.sheen::after {
+  content: "";
+  position: absolute;
+  inset: -40% auto -40% -60%;
+  width: 45%;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 100%
+  );
+  transform: skewX(-18deg);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .sheen:hover::after {
+    animation: sheen-cross 900ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+}
+
+@keyframes sheen-cross {
+  from {
+    opacity: 0.9;
+    transform: translateX(0) skewX(-18deg);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(320%) skewX(-18deg);
+  }
+}
+
+.rule-grow {
+  position: relative;
+}
+
+.rule-grow::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 22px;
+  border-radius: 999px;
+  background: var(--color-gold-400);
+  transition: width 380ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.rule-grow:hover::after {
+  width: 100%;
+}
+
+/* ------------------------------------------------------------------
+   Link draw: a gold underline that slides out from the left on hover.
+   For nav links and footer links — motion, not decoration.
+   ------------------------------------------------------------------ */
+
+.link-draw {
+  position: relative;
+}
+
+.link-draw::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  height: 2px;
+  width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-gold-400), var(--color-gold-500));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 360ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.link-draw:hover::after,
+.link-draw:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* Ledger row: a quiet gold wash slides in behind the hovered row. */
+.row-glow {
+  position: relative;
+  isolation: isolate;
+  transition: background-color 320ms ease, padding-left 320ms
+    cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.row-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    90deg,
+    rgba(251, 202, 75, 0.14),
+    rgba(251, 202, 75, 0.03) 62%,
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 320ms ease;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .row-glow:hover::before {
+    opacity: 1;
+  }
+
+  .row-glow:hover {
+    padding-left: 1.25rem;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Pointer-reactive surface: a card that tilts toward the cursor and a
+   warm light that tracks it across the face. The tilt qualities are set
+   from JS (TiltCard) only on fine pointers with motion allowed.
+   ------------------------------------------------------------------ */
+
+.tilt {
+  transform: perspective(900px) rotateX(var(--rx, 0deg))
+    rotateY(var(--ry, 0deg)) translateZ(0);
+  transition:
+    transform 300ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 300ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
+}
+
+.spot {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.spot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 350ms ease;
+  background: radial-gradient(
+    300px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(251, 202, 75, 0.09),
+    transparent 72%
+  );
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .spot:hover::before {
+    opacity: 1;
+  }
+}
+
+/* Shimmering gradient headline: the gold sweep keeps moving. */
+.shimmer-text {
+  background-size: 200% auto;
+  animation: shimmer-sweep 6s linear infinite;
+}
+
+@keyframes shimmer-sweep {
+  to {
+    background-position: 200% center;
+  }
+}
+
+/* Slow decorative drift for hero ornaments and the bookfloat. */
+.drift-slow {
+  animation: drift-bob 9s ease-in-out infinite;
+}
+
+/* Slow cinematic push-in for photographic backdrops (ken-burns). */
+.ken-burns {
+  animation: ken-burns-drift 26s ease-in-out infinite alternate;
+}
+
+@keyframes ken-burns-drift {
+  from {
+    transform: scale(1) translate(0, 0);
+  }
+  to {
+    transform: scale(1.08) translate(-1.2%, -1.5%);
+  }
+}
+
+@keyframes drift-bob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -12px, 0);
+  }
+}
+
+.drift-slow {
+  transition: transform 500ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.drift-slow:hover {
+  transform: perspective(1100px) rotate3d(1, -1, 0, 6deg) scale(1.02);
+  animation-play-state: paused;
+}
+
+/* Continuous value ribbon used along the bottom of the hero. */
+.marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    black 8%,
+    black 92%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    black 8%,
+    black 92%,
+    transparent
+  );
+}
+
+.marquee__track {
+  display: flex;
+  width: max-content;
+  gap: 3rem;
+  animation: marquee-slide 48s linear infinite;
+}
+
+@keyframes marquee-slide {
+  to {
+    transform: translateX(calc(-50% - 1.5rem));
+  }
+}
+
+/* The hero backdrop: three chessboard stills crossfade on a loop so the
+   opening hero is always in motion. Each frame holds ~8s and blends in ~2s
+   while its own slow ken-burns push keeps it drifting. */
+.hero-fade__frame {
+  opacity: 0;
+  animation: hero-frame-fade 24s linear infinite;
+}
+
+.hero-fade__frame:first-child {
+  animation-delay: 0s;
+}
+
+.hero-fade__frame:nth-child(2) {
+  animation-delay: 8s;
+}
+
+.hero-fade__frame:nth-child(3) {
+  animation-delay: 16s;
+}
+
+.hero-fade__img {
+  animation: ken-burns-drift 24s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes hero-frame-fade {
+  0% {
+    opacity: 1;
+  }
+  36% {
+    opacity: 1;
+  }
+  42% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-fade__frame {
+    animation: none;
+  }
+
+  .hero-fade__frame:not(:first-child) {
+    opacity: 0;
+  }
+
+  .hero-fade__frame:first-child {
+    opacity: 1;
+  }
+}
+
+/* Calm, premium hover surface: almost imperceptible rise so text stays
+   perfectly still and no layout shifts distract from reading. */
+.hover-quiet {
+  transition:
+    border-color 260ms ease,
+    background-color 260ms ease,
+    box-shadow 300ms ease;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .hover-quiet:hover {
+    box-shadow: 0 14px 34px -26px rgba(5, 37, 80, 0.45);
+  }
+
+  .hover-quiet:hover::after {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tilt {
+    transform: none;
+  }
+
+  .shimmer-text,
+  .drift-slow,
+  .marquee__track {
+    animation: none;
+  }
+}
+
+.display-xl {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.dot-grid {
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.16) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
+}
+
+/* Soft, luminous panel used behind the hero copy. */
+.hero-wash {
+  background-image: radial-gradient(
+      120% 90% at 0% 0%,
+      #e9f2fd 0%,
+      #f4f9ff 42%,
+      #ffffff 72%
+    ),
+    linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
+}
+
+/* Navy band with a subtle top-left glow, as in the pathway section. */
+.navy-wash {
+  background-image: radial-gradient(
+      120% 140% at 0% 0%,
+      #1a4d8f 0%,
+      #0a3a76 45%,
+      #05245e 100%
+    ),
+    linear-gradient(120deg, #0a3570 0%, #05245e 100%);
+}
+
+.navy-wash-footer {
+  background-image: linear-gradient(120deg, #0a3a76 0%, #05245e 100%);
+}
+
+/* The floating white curve that separates hero copy from the photo. */
+.hero-curve {
+  border-radius: 0 100% 100% 0 / 0 50% 50% 0;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* ------------------------------------------------------------------
+   GLANCE first-visit zip opening. The site opens behind a real metal
+   zipper: meshed gold teeth on navy fabric, a slider at the top, and a
+   slit that parts behind the slider as it pulls down. Every geometric
+   layer (slider, teeth, fabric clip) reads one animated length,
+   --zip-open, so they can never drift out of sync. The intro adds no
+   data or image-loading delay: the page renders beneath it immediately.
+   ------------------------------------------------------------------ */
+
+@property --zip-open {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 30px;
+}
+
+@property --zip-gap {
+  syntax: "<length-percentage>";
+  inherits: true;
+  initial-value: 46px;
+}
+
+@property --zip-flare {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 64px;
+}
+
+.site-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  overflow: hidden;
+  isolation: isolate;
+  pointer-events: none;
+  /* Slider centre line. 30px = parked at the top of a closed zip. */
+  --zip-open: 30px;
+  /* Parted slit: each tape retreats this far from the centre line. */
+  --zip-gap: 46px;
+  /* The fabric edge flares from the centre out to the slit over this
+     distance above the slider, the way cloth is dragged apart at the
+     throat of a real slider. */
+  --zip-flare: 64px;
+  animation: zip-progress 8s both;
+}
+
+/* Review freeze (?intro=hold): the fully closed zipper, no animation. */
+html[data-intro-hold="true"] .site-intro,
+html[data-intro-hold="true"] .zip__panel,
+html[data-intro-hold="true"] .zip__brand {
+  animation: none !important;
+}
+html[data-intro-hold="true"] .zip__brand {
+  opacity: 1;
+  scale: 1;
+  translate: 0 0;
+}
+
+/* ---- Fabric panels ------------------------------------------------ */
+
+.zip__panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50.05%;
+  backface-visibility: hidden;
+}
+
+.zip__panel--left {
+  left: 0;
+  z-index: 2;
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.03) 0 2px, transparent 2px 5px),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.06) 0 2px, transparent 2px 5px),
+    linear-gradient(to right, transparent 62%, rgba(255, 255, 255, 0.1)),
+    linear-gradient(105deg, #0e3c72 0%, #08294f 55%, #021b3c 100%);
+  /* The parted edge: the tape retreats to --zip-gap above the slider,
+     flaring back to the centre at the slider line. Closed when the
+     slider is parked at the top. */
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--zip-gap)) 0,
+    calc(100% - var(--zip-gap)) max(0px, var(--zip-open) - var(--zip-flare)),
+    100% var(--zip-open),
+    100% 100%,
+    0 100%
+  );
+  animation: zip-part-left 8s both;
+}
+
+.zip__panel--right {
+  right: 0;
+  z-index: 1;
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.03) 0 2px, transparent 2px 5px),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.06) 0 2px, transparent 2px 5px),
+    linear-gradient(to left, transparent 62%, rgba(255, 255, 255, 0.1)),
+    linear-gradient(255deg, #0e3c72 0%, #08294f 55%, #021b3c 100%);
+  clip-path: polygon(
+    100% 0,
+    var(--zip-gap) 0,
+    var(--zip-gap) max(0px, var(--zip-open) - var(--zip-flare)),
+    0 var(--zip-open),
+    0 100%,
+    100% 100%
+  );
+  animation: zip-part-right 8s both;
+}
+
+/* ---- Tape, teeth, seam ------------------------------------------- */
+
+.zip__set {
+  position: absolute;
+  inset: 0;
+}
+
+/* Closed (meshed) zip below the slider line... */
+.zip__set--closed {
+  clip-path: inset(calc(var(--zip-open) - 6px) 0 0 0);
+}
+
+/* ...and the parted teeth riding the fabric edges above it. */
+.zip__set--open {
+  clip-path: inset(0 0 calc(100vh - var(--zip-open) + 6px) 0);
+}
+
+/* Cloth tape carrying the teeth. */
+.zip__tape {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(255, 255, 255, 0.1) 45%,
+    rgba(0, 0, 0, 0.22)
+  );
+}
+.zip__tape--left {
+  right: 0;
+  border-left: 1px dashed rgba(255, 255, 255, 0.2);
+}
+.zip__tape--right {
+  left: 0;
+  border-right: 1px dashed rgba(255, 255, 255, 0.2);
+}
+.zip__tape--parted {
+  filter: brightness(0.92);
+}
+
+.zip__set--open .zip__tape--left,
+.zip__set--open .zip__teeth--left {
+  right: var(--zip-gap);
+}
+.zip__set--open .zip__tape--right,
+.zip__set--open .zip__teeth--right {
+  left: var(--zip-gap);
+}
+
+/* Teeth columns. Each tooth is one tile of an SVG strip repeated down
+   the tape; the right column is offset half a pitch so its teeth fall
+   between the left column's — that alternation is what makes the two
+   rows read as one closed zip rather than a stack of pairs. */
+.zip__teeth {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  background-repeat: repeat-y;
+  background-size: 12px 14px;
+}
+.zip__teeth--left {
+  right: -5px;
+  background-position: 0 1.5px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 15 17'%3E%3Cdefs%3E%3ClinearGradient id='t' x1='0' y1='0' x2='0.85' y2='1'%3E%3Cstop offset='0' stop-color='%23fff3c4'/%3E%3Cstop offset='0.38' stop-color='%23f4bf3f'/%3E%3Cstop offset='0.72' stop-color='%23c8901a'/%3E%3Cstop offset='1' stop-color='%238c6207'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='0' y='6.4' width='6.8' height='4.2' rx='1.2' fill='%23b8860c'/%3E%3Crect x='3.2' y='3' width='11' height='9' rx='3' fill='url(%23t)'/%3E%3Crect x='4.8' y='4.2' width='6.4' height='1.3' rx='0.65' fill='%23ffffff' opacity='0.5'/%3E%3Crect x='5' y='9.6' width='6.8' height='1.1' rx='0.55' fill='%236b4a05' opacity='0.45'/%3E%3C/svg%3E");
+}
+.zip__teeth--right {
+  left: -5px;
+  background-position: 0 8.5px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 15 17'%3E%3Cdefs%3E%3ClinearGradient id='t' x1='1' y1='0' x2='0.15' y2='1'%3E%3Cstop offset='0' stop-color='%23fff3c4'/%3E%3Cstop offset='0.38' stop-color='%23f4bf3f'/%3E%3Cstop offset='0.72' stop-color='%23c8901a'/%3E%3Cstop offset='1' stop-color='%238c6207'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='8.2' y='6.4' width='6.8' height='4.2' rx='1.2' fill='%23b8860c'/%3E%3Crect x='0.8' y='3' width='11' height='9' rx='3' fill='url(%23t)'/%3E%3Crect x='3.8' y='4.2' width='6.4' height='1.3' rx='0.65' fill='%23ffffff' opacity='0.5'/%3E%3Crect x='3.2' y='9.6' width='6.8' height='1.1' rx='0.55' fill='%236b4a05' opacity='0.45'/%3E%3C/svg%3E");
+}
+
+/* Hairline shadow down the closed seam. */
+.zip__seam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -1px;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.45) 5%,
+    rgba(0, 0, 0, 0.45) 95%,
+    transparent 100%
+  );
+}
+
+/* ---- Metal slider + pull tab ------------------------------------- */
+
+.zip__slider {
+  position: absolute;
+  z-index: 50;
+  top: 0;
+  left: 50%;
+  width: 64px;
+  transform: translate(-50%, calc(var(--zip-open) - 32px));
+  filter:
+    drop-shadow(0 14px 22px rgba(0, 0, 0, 0.45))
+    drop-shadow(0 0 18px rgba(251, 202, 75, 0.22));
+}
+
+.zip__slider-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ---- Brand label -------------------------------------------------- */
+
+.zip__brand {
+  position: absolute;
+  z-index: 40;
+  top: 33%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 26px;
+  transform: translate(-50%, -50%);
+  border-radius: 18px;
+  background: rgba(2, 22, 48, 0.92);
+  border: 1px solid rgba(251, 202, 75, 0.35);
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.7);
+  text-align: center;
+  animation: zip-brand 8s both;
+}
+
+.zip__brand .glance-logo,
+.zip__brand img {
+  max-width: min(64vw, 300px);
+}
+.zip__brand-rule {
+  width: 54px;
+  height: 2px;
+  border-radius: 999px;
+  background: #fbca4b;
+}
+.zip__brand-tagline {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.zip__brand-name {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+}
+
+/* ---- The timeline ------------------------------------------------- */
+
+@keyframes zip-progress {
+  0% {
+    --zip-open: 30px;
+    --zip-gap: 40px;
+    --zip-flare: 60px;
+    opacity: 0;
+    animation-timing-function: ease-out;
+  }
+  7% {
+    opacity: 1;
+    animation-timing-function: linear;
+  }
+  14% {
+    --zip-open: 30px;
+    --zip-gap: 46px;
+    --zip-flare: 66px;
+    /* The pull is deliberately near-steady: the website stays readable
+       through the widening slit instead of flashing past. */
+    animation-timing-function: cubic-bezier(0.35, 0.08, 0.25, 1);
+  }
+  80% {
+    --zip-open: 112vh;
+    --zip-gap: 84px;
+    --zip-flare: 112px;
+    animation-timing-function: linear;
+  }
+  100% {
+    --zip-open: 140vh;
+    --zip-gap: 110px;
+    --zip-flare: 140px;
+  }
+}
+
+@keyframes zip-part-left {
+  0%,
+  78% {
+    transform: translateX(0);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0);
+  }
+  100% {
+    transform: translateX(-102%);
+  }
+}
+
+@keyframes zip-part-right {
+  0%,
+  78% {
+    transform: translateX(0);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0);
+  }
+  100% {
+    transform: translateX(102%);
+  }
+}
+
+@keyframes zip-brand {
+  0% {
+    opacity: 0;
+    scale: 0.96;
+    translate: 0 14px;
+  }
+  8% {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+    animation-timing-function: ease-in-out;
+  }
+  22% {
+    opacity: 1;
+    animation-timing-function: ease-in;
+  }
+  33% {
+    opacity: 0;
+    scale: 1.02;
+    translate: 0 -10px;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.02;
+    translate: 0 -10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .site-intro {
+    display: none;
+  }
+}
+
+/* The public site is authored on a white canvas with navy ink and gold
+   accents. Only the mobile nav drawer (.drawer-dark) renders its light
+   tokens on a navy surface; nothing else is re-mapped. */
+
+/* ---- Drawer-dark surface remap (mobile nav drawer only) ------------ */
+
+/* The root itself carries bg-white: it needs the compound selector, not a
+   descendant one, or the drawer stays white while its text remaps to light
+   shades — i.e. invisible white-on-white menu labels. */
+.drawer-dark.bg-white,
+.drawer-dark .bg-white {
+  background-color: #0a2c58;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.drawer-dark [class*="bg-white/95"] {
+  background-color: rgba(5, 20, 44, 0.94);
+}
+
+.drawer-dark .bg-navy-50 {
+  background-color: rgba(255, 255, 255, 0.045);
+}
+
+.drawer-dark .border-line {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.drawer-dark [class*="border-line/"] {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.drawer-dark .divide-line > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.drawer-dark .border-navy-900 {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.drawer-dark .border-navy-100 {
+  border-color: rgba(255, 255, 255, 0.16);
+}/* ---- Drawer-dark text remap ---------------------------------------- */
+
+.drawer-dark .text-navy-900,
+.drawer-dark .text-navy-950 {
+  color: #eef4fc;
+}
+
+.drawer-dark [class*="text-navy-900/"] {
+  color: rgba(240, 245, 252, 0.9);
+}
+
+.drawer-dark .text-navy-800,
+.drawer-dark .text-navy-700,
+.drawer-dark .text-navy-600 {
+  color: #c9d7ea;
+}
+
+.drawer-dark .text-navy-400 {
+  color: #8fa6c4;
+}
+
+.drawer-dark .text-ink-300,
+.drawer-dark .text-ink-400 {
+  color: #93a5bf;
+}
+
+.drawer-dark .text-ink-500,
+.drawer-dark .text-ink-600,
+.drawer-dark .text-ink-700 {
+  color: #b4c3d9;
+}
+
+.drawer-dark .text-gold-600 {
+  color: #fcd34d;
+}
+
+.drawer-dark .placeholder\:text-ink-400::placeholder {
+  color: #7e93b3;
+}
+
+/* ---- Scroll motion: sections reveal in, recede out ----------------- */
+
+/*
+ * Pure CSS, driven off the section's own position in the viewport: scrolling
+ * down fades the block up into place, scrolling back above it reverses the
+ * motion so it recedes again. No JavaScript state, no DOM attributes, so it
+ * can never fight React's hydration. Reduced motion and browsers without
+ * scroll-driven animations simply see the page as normal.
+ */
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .site-canvas main > * {
+      animation: scroll-reveal-step 700ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 30%;
+    }
+
+    @keyframes scroll-reveal-step {
+      from {
+        /* No opacity fade: an opacity 0 → 1 range made whole sections look
+           washed-out and unreadable mid-scroll. Motion only, always legible. */
+        translate: 0 24px;
+        filter: brightness(1.04);
+      }
+      to {
+        translate: 0 0;
+        filter: brightness(1);
+      }
+    }
+  }
+}
+
+/* ---- Zip intro, page stage ----------------------------------------- */
+
+/*
+ * On the very first visit the zipper plays on solid fabric: the page stage
+ * (header + main + footer) is invisible until the zipper has finished, then
+ * fades in. The pre-paint script in the root layout sets .intro-waiting on
+ * <html> synchronously so there is no flash of the page behind the zip;
+ * SiteIntro removes the class the moment it unmounts.
+ */
+
+.site-stage {
+  transition: opacity 600ms ease;
+}
+
+html.intro-waiting .site-stage {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---- Page transitions ----------------------------------------------- */
+
+/*
+ * Calm cross-fade between pages, driven by PageTransition (page-transition.tsx).
+ * The old page dims slightly as you follow an internal link; the new page
+ * rises in with a short fade. Never fully blanks the screen, so navigation
+ * can never leave the user on white.
+ */
+
+.page-leave {
+  transition: opacity 220ms ease;
+}
+
+.page-leave--active {
+  opacity: 0.72;
+}
+
+.page-enter {
+  animation: page-enter-rise 460ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes page-enter-rise {
+  from {
+    opacity: 0.35;
+    translate: 0 14px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* Hairline of gold across the top while the next page loads. */
+.nav-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9998;
+  height: 2px;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: 0 0;
+  background: linear-gradient(
+    90deg,
+    rgba(234, 174, 20, 0.1),
+    #eaae14,
+    rgba(234, 174, 20, 0.35)
+  );
+  opacity: 0;
+  transition: opacity 200ms ease;
+  pointer-events: none;
+}
+
+.nav-progress--active {
+  opacity: 1;
+  animation: nav-progress-slide 900ms ease-out both;
+}
+
+@keyframes nav-progress-slide {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(0.85);
+  }
+}
+
+/* ---- Cinematic type helpers ---------------------------------------- */
+
+.display-cinematic {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.032em;
+  line-height: 1.04;
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-family: var(--font-data);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-gold-300);
+}
+
+.kicker::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  rotate: 45deg;
+  background: var(--color-gold-400);
+  box-shadow: 0 0 10px rgba(234, 174, 20, 0.8);
+}
+

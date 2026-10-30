@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local debugging scratch: throwaway CommonJS probes that are never bundled
+    // or imported by the app, so they are not part of the linted source tree.
+    ".tmp/**",
+    ".scratch/**",
+    ".pglocal/**",
   ]),
 ]);
 

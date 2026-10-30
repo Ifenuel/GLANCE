@@ -29,9 +29,42 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
 
-# env files (can opt-in for committing if needed)
-.env*
+# --- secrets and every env-family file stay local ---
+.env
+.env.*
+
+# --- platform / AI assistant files (local only, never published) ---
+.freebuff/
+.tmp/
+.scratch/
+.crops/
+.scrivna/
+AGENTS.md
+
+# --- all documentation and notes stay local too ---
+*.md
+.codebuff*
+
+# --- database backups and dumps (contain customer data) ---
+backups/
+*.dump
+*.sql.gz
+
+# --- local databases (dev-only, may hold real records) ---
+*.db
+*.sqlite
+*.sqlite3
+prisma/dev.db
+
+# --- local verification screens and artifacts ---
+screenshots/
+
+# --- one-off verification scripts placed at the project root ---
+posthog-analytics.verify.mjs
+posthog-replay.check.mjs
+pgstart.err
 
 # vercel
 .vercel
@@ -39,3 +72,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
