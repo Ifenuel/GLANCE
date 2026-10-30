@@ -33,6 +33,7 @@ export function PageHeader({
             src={background}
             alt={backgroundAlt ?? ""}
             fill
+            priority
             sizes="100vw"
             className="object-cover"
           />

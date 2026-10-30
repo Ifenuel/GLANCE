@@ -3,6 +3,7 @@ import { ConsentBanner } from "@/components/site/consent-banner";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { CinematicIntro } from "@/components/site/cinematic-intro";
+import { BackToTop } from "@/components/site/back-to-top";
 
 // Every public page reads live GLANCE records (chapters, posts, media). That
 // data is intentionally fresh, so these routes render on demand instead of
@@ -19,6 +20,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />
+        <BackToTop />
       </div>
       <ConsentBanner />
     </div>

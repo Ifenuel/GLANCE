@@ -45,7 +45,7 @@ export default function LeadingAt27Page() {
         aside={
           <div className="flex justify-center lg:justify-end">
             <Image
-              src="/media/leading-at-27-book.png"
+              src="/media/leading-at-27-book.webp"
               alt="Leading at 27 by Seyi Adisa"
               width={1526}
               height={1241}

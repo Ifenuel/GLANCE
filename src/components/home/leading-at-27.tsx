@@ -15,7 +15,7 @@ export function LeadingAt27() {
         <Reveal className="flex justify-center lg:justify-start">
           <div className="drift-slow">
             <Image
-              src="/media/leading-at-27-book.png"
+              src="/media/leading-at-27-book.webp"
               alt="Leading at 27 by Seyi Adisa"
               width={1526}
               height={1241}

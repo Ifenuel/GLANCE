@@ -52,7 +52,7 @@ export function GlanceLogo({ variant = "dark", className }: LogoProps) {
       <span className="inline-flex items-center rounded-lg bg-[#ffffff] px-2 py-1.5 shadow-sm">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/_brand/glance-lockup.png"
+          src="/_brand/glance-lockup.webp"
           alt="GLANCE: Governance, Leadership and National Civic Engagement"
           className={`w-auto ${size}`}
         />
@@ -63,7 +63,7 @@ export function GlanceLogo({ variant = "dark", className }: LogoProps) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/_brand/glance-lockup.png"
+      src="/_brand/glance-lockup.webp"
       alt="GLANCE: Governance, Leadership and National Civic Engagement"
       className={`w-auto ${size}`}
     />
