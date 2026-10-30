@@ -5,22 +5,32 @@ import { usePathname } from "next/navigation";
 
 export const INTRO_STORAGE_KEY = "glance:intro-seen";
 
-/** "Already welcomed on this visit" — an in-memory flag, deliberately not
- *  a storage write. sessionStorage survives reloads inside the same tab, so
- *  a visitor who opened the site once stopped seeing the welcome banner on
- *  every reload until they closed the tab; the banner is an opening moment,
- *  and it should greet each fresh visit. The flag survives in-page
- *  navigation (returning to the homepage never replays it mid-session) but
- *  resets on every full load: new tab, new session, plain refresh — each is
- *  met by the banner again. */
+/** "Already welcomed this session" — sessionStorage, so the banner greets a
+ *  visitor exactly once per tab session: the first time the site is loaded.
+ *  Reloads, link clicks back to the homepage (client-side or via a full
+ *  document load) and tab switches never replay it, because the marker
+ *  outlives all of those inside the tab. Closing the tab clears the marker,
+ *  so a fresh session is met by the banner again. */
 let welcomedThisVisit = false;
 
 function alreadyWelcomed() {
-  return welcomedThisVisit;
+  if (welcomedThisVisit) return true;
+  try {
+    return sessionStorage.getItem(INTRO_STORAGE_KEY) === "1";
+  } catch {
+    // Storage can throw in private modes with data disabled; fall back to
+    // the in-memory marker alone.
+    return false;
+  }
 }
 
 function markWelcomed() {
   welcomedThisVisit = true;
+  try {
+    sessionStorage.setItem(INTRO_STORAGE_KEY, "1");
+  } catch {
+    // Same prohibition as above — in-memory still covers this page load.
+  }
 }
 
 /** No timer: the banner is the site's front door now — it stays up until
@@ -66,7 +76,14 @@ export function CinematicIntro() {
     const seen = alreadyWelcomed();
 
     const shouldPlay = !reduced && (forced || (!seen && pathname === "/"));
-    if (!shouldPlay) return;
+    if (!shouldPlay) {
+      // Defensive release: the pre-paint gate in the root layout only hides
+      // the stage for unwelcomed home visits, but if the class ever got set
+      // without the banner playing, it must never leave the stage stuck.
+      document.documentElement.classList.remove("intro-waiting");
+      document.body.style.overflow = "";
+      return;
+    }
   // No storage write here: the flag is set on dismissal (see dismiss),
     // because writing it while the banner is up lets a second effect run
     // cancel it out before it is ever seen.

@@ -72,13 +72,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col bg-white">
         <script
           dangerouslySetInnerHTML={{
-            // Pre-paint gate: on the homepage (the banner greets every fresh
-            // visit there) hide the page stage before first paint so the
-            // welcome moment plays on a clean stage. CinematicIntro releases
-            // the stage when the banner is dismissed; reduced-motion
-            // visitors skip the banner, so they skip the gate too.
+            // Pre-paint gate: on the homepage hide the page stage before
+            // first paint so the welcome banner plays on a clean stage — but
+            // only when the visitor hasn't already been welcomed this tab
+            // session (sessionStorage marker written at dismissal).
+            // CinematicIntro releases the stage when the banner is dismissed
+            // or absent; reduced-motion visitors skip the banner, so they
+            // skip the gate too.
             __html:
-              "try{var reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;if(!reduced&&location.pathname==='/'){document.documentElement.classList.add('intro-waiting')}}catch(e){}"
+              "try{var reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;var seen=0;try{seen=sessionStorage.getItem('glance:intro-seen')==='1'}catch(e){}if(!reduced&&!seen&&location.pathname==='/'){document.documentElement.classList.add('intro-waiting')}}catch(e){}"
           }}
         />
         {children}
