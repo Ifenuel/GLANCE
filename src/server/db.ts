@@ -6,14 +6,35 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+/**
+ * Per-instance connection limit. Defaults to 2 because pooled Postgres
+ * (Supabase/Supavisor and friends) admits a small, hard-capped number of
+ * CLIENTS — session-mode poolers allow 15 — while a serverless deployment
+ * runs many instances at once. A high default exhausts the pool and every
+ * query starts failing with "max clients reached"; two per instance keeps
+ * bursty function multiplexing well inside that budget.
+ */
 const connectionLimit = Math.max(
-  2,
-  Math.min(20, Number.parseInt(process.env.DB_CONNECTION_LIMIT ?? "10", 10) || 10),
+  1,
+  Math.min(20, Number.parseInt(process.env.DB_CONNECTION_LIMIT ?? "2", 10) || 2),
 );
 const databaseUrl = process.env.DATABASE_URL;
 const pooledDatabaseUrl = databaseUrl
-  ? `${databaseUrl}${databaseUrl.includes("?") ? "&" : "?"}connection_limit=${connectionLimit}&pool_timeout=30`
+  ? // A URL that already carries connection_limit (our serverless settings
+    // recommend it) must win; never append a second, conflicting value. Also
+    // pgbouncer=true is what transaction-mode pooling requires of Prisma.
+    connectionLimitParamPresent(databaseUrl)
+    ? `${databaseUrl}${databaseUrl.includes("?") ? "&" : "?"}pool_timeout=30`
+    : `${databaseUrl}${databaseUrl.includes("?") ? "&" : "?"}connection_limit=${connectionLimit}&pool_timeout=30`
   : undefined;
+
+function connectionLimitParamPresent(url: string): boolean {
+  try {
+    return new URL(url).searchParams.has("connection_limit");
+  } catch {
+    return /([?&])connection_limit=/.test(url);
+  }
+}
 
 const base =
   globalForPrisma.prisma ??
