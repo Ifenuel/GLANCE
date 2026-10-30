@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { db } from "@/server/db";
 import { ChapterApplicationForm } from "@/components/forms/chapter-application-form";
 import { PageHeader } from "@/components/site/page-header";
@@ -30,13 +31,7 @@ const process = [
   },
 ];
 
-export default async function StartAChapterPage() {
-  const chapters = await db.chapter.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: [{ state: "asc" }, { institution: "asc" }],
-    select: { code: true, institution: true },
-  });
-
+export default function StartAChapterPage() {
   return (
     <>
       <PageHeader
@@ -125,32 +120,15 @@ export default async function StartAChapterPage() {
                 <h3 className="text-[15px] font-extrabold text-navy-900">
                   Campuses hosting GLANCE chapters
                 </h3>
-                {chapters.length === 0 ? (
-                  <p className="mt-2 text-[13px] leading-[1.8] text-ink-500">
-                    No chapter has been activated yet — your campus could be the
-                    first. Once the secretariat activates it, the campus appears
-                    here and in the chapter directory automatically.
+                {/* Chapter data reads the database directly, so it streams in
+                    its own boundary while the page shell renders instantly. */}
+                <Suspense fallback={
+                  <p className="mt-2 text-[13px] leading-[1.8] text-ink-500" aria-busy="true">
+                    Loading the campus directory…
                   </p>
-                ) : (
-                  <>
-                    <p className="mt-2 text-[13px] leading-[1.8] text-ink-500">
-                      The institutions currently hosting activated GLANCE
-                      chapters, straight from the live directory.
-                    </p>
-                    <ul className="mt-4 flex flex-wrap gap-2">
-                      {chapters.map((chapter) => (
-                        <li
-                          key={chapter.code}
-                          className="rounded-full border border-navy-200 bg-white px-3.5 py-1.5 text-[12.5px] font-semibold text-navy-800"
-                        >
-                          <a href={`/chapters/${chapter.code}`} className="hover:text-navy-950">
-                            {chapter.institution}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
+                }>
+                  <LiveChapters />
+                </Suspense>
                 <VerifiedNote>
                   The chapter directory shows only chapters activated by GLANCE.
                 </VerifiedNote>
@@ -172,6 +150,46 @@ export default async function StartAChapterPage() {
           </div>
         </Container>
       </Section>
+    </>
+  );
+}
+
+/** Live chapter badges streamed separately from the static page shell. */
+async function LiveChapters() {
+  const chapters = await db.chapter.findMany({
+    where: { status: "ACTIVE" },
+    orderBy: [{ state: "asc" }, { institution: "asc" }],
+    select: { code: true, institution: true },
+  });
+
+  if (chapters.length === 0) {
+    return (
+      <p className="mt-2 text-[13px] leading-[1.8] text-ink-500">
+        No chapter has been activated yet — your campus could be the first. Once
+        the secretariat activates it, the campus appears here and in the chapter
+        directory automatically.
+      </p>
+    );
+  }
+
+  return (
+    <>
+      <p className="mt-2 text-[13px] leading-[1.8] text-ink-500">
+        The institutions currently hosting activated GLANCE chapters, straight
+        from the live directory.
+      </p>
+      <ul className="mt-4 flex flex-wrap gap-2">
+        {chapters.map((chapter) => (
+          <li
+            key={chapter.code}
+            className="rounded-full border border-navy-200 bg-white px-3.5 py-1.5 text-[12.5px] font-semibold text-navy-800"
+          >
+            <a href={`/chapters/${chapter.code}`} className="hover:text-navy-950">
+              {chapter.institution}
+            </a>
+          </li>
+        ))}
+      </ul>
     </>
   );
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { db } from "@/server/db";
 import { ButtonLink } from "@/components/button-link";
 import { PageHeader } from "@/components/site/page-header";
@@ -12,13 +13,7 @@ export const metadata: Metadata = {
     "Institutions and organisations working with GLANCE, and how to partner with the movement.",
 };
 
-export default async function PartnersPage() {
-  const chapters = await db.chapter.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: [{ state: "asc" }, { institution: "asc" }],
-    select: { code: true, name: true, institution: true, state: true },
-  });
-
+export default function PartnersPage() {
   const ways = [
     {
       title: "Host a chapter",
@@ -92,31 +87,54 @@ export default async function PartnersPage() {
               <h3 className="text-[16px] font-extrabold text-navy-900">
                 Campuses hosting GLANCE chapters
               </h3>
-              {chapters.length === 0 ? (
-                <p className="mt-3 text-[13.5px] leading-[1.85] text-ink-500">
-                  Our first chapters are being activated now. When the secretariat
-                  activates a campus, it is listed here automatically — check the
-                  chapter&nbsp;directory for the live list.
+              {/* The chapter list reads the database directly, so it streams in
+                  its own boundary while the rest of the page renders instantly. */}
+              <Suspense fallback={
+                <p className="mt-3 text-[13.5px] leading-[1.85] text-ink-500" aria-busy="true">
+                  Loading the campus directory…
                 </p>
-              ) : (
-                <ul className="mt-4 flex flex-wrap gap-2">
-                  {chapters.map((chapter) => (
-                    <li
-                      key={chapter.code}
-                      className="rounded-full border border-navy-200 bg-white px-3.5 py-1.5 text-[12.5px] font-semibold text-navy-800"
-                    >
-                      <a href={`/chapters/${chapter.code}`} className="hover:text-navy-950">
-                        {chapter.institution}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              }>
+                <ChaptersList />
+              </Suspense>
               <VerifiedNote>{contentNotices.partners.note}</VerifiedNote>
             </div>
           </div>
         </Container>
       </Section>
     </>
+  );
+}
+
+/** Live chapter dropdown streamed separately from the static page shell. */
+async function ChaptersList() {
+  const chapters = await db.chapter.findMany({
+    where: { status: "ACTIVE" },
+    orderBy: [{ state: "asc" }, { institution: "asc" }],
+    select: { code: true, name: true, institution: true, state: true },
+  });
+
+  if (chapters.length === 0) {
+    return (
+      <p className="mt-3 text-[13.5px] leading-[1.85] text-ink-500">
+        Our first chapters are being activated now. When the secretariat
+        activates a campus, it is listed here automatically — check the
+        chapter&nbsp;directory for the live list.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="mt-4 flex flex-wrap gap-2">
+      {chapters.map((chapter) => (
+        <li
+          key={chapter.code}
+          className="rounded-full border border-navy-200 bg-white px-3.5 py-1.5 text-[12.5px] font-semibold text-navy-800"
+        >
+          <a href={`/chapters/${chapter.code}`} className="hover:text-navy-950">
+            {chapter.institution}
+          </a>
+        </li>
+      ))}
+    </ul>
   );
 }

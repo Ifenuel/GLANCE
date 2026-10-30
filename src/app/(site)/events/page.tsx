@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { ButtonLink } from "@/components/button-link";
 import { ClockIcon, PinIcon } from "@/components/icons";
@@ -14,19 +15,11 @@ export const metadata: Metadata = {
     "Sessions, roundtables and campus activations published by GLANCE chapters and GLANCE.",
 };
 
-export default async function EventsPage({
+export default function EventsPage({
   searchParams,
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
-  const { page: pageParam } = await searchParams;
-  const page = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
-  const [upcoming, past] = await Promise.all([
-    listUpcomingEvents(12),
-    listPastEventsPaged(page),
-  ]);
-  const pastTotalPages = Math.max(1, Math.ceil(past.total / past.perPage));
-
   return (
     <>
       <PageHeader
@@ -47,6 +40,30 @@ export default async function EventsPage({
         }
       />
 
+      {/* The "past events" section reads the ?page URL param, so it streams
+          inside a boundary while the shell renders instantly. */}
+      <Suspense fallback={<EventsSkeleton />}>
+        <EventsResults searchParams={searchParams} />
+      </Suspense>
+    </>
+  );
+}
+
+async function EventsResults({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
+  const [upcoming, past] = await Promise.all([
+    listUpcomingEvents(12),
+    listPastEventsPaged(page),
+  ]);
+  const pastTotalPages = Math.max(1, Math.ceil(past.total / past.perPage));
+
+  return (
+    <>
       <Section>
         <Container>
           <SectionHeading eyebrow="Upcoming" title="What is coming up" />
@@ -133,40 +150,64 @@ export default async function EventsPage({
                     </p>
                   ) : null}
                 </li>
-              ))}              </ul>
-              {pastTotalPages > 1 ? (
-                <nav
-                  aria-label="Past event pages"
-                  className="mt-6 flex items-center justify-between"
-                >
-                  {page > 1 ? (
-                    <Link
-                      href={`/events?page=${page - 1}`}
-                      className="text-xs font-bold text-navy-900 underline decoration-gold-400 decoration-2 underline-offset-4"
-                    >
-                      ← Newer
-                    </Link>
-                  ) : (
-                    <span aria-hidden className="text-xs font-semibold text-ink-400" />
-                  )}
-                  <span className="text-[11.5px] text-ink-400">
-                    Page {past.page} of {pastTotalPages}
-                  </span>
-                  {page < pastTotalPages ? (
-                    <Link
-                      href={`/events?page=${page + 1}`}
-                      className="text-xs font-bold text-navy-900 underline decoration-gold-400 decoration-2 underline-offset-4"
-                    >
-                      Older →
-                    </Link>
-                  ) : (
-                    <span aria-hidden className="text-xs font-semibold text-ink-400" />
-                  )}
-                </nav>
-              ) : null}
+              ))}
+            </ul>
+            {pastTotalPages > 1 ? (
+              <nav
+                aria-label="Past event pages"
+                className="mt-6 flex items-center justify-between"
+              >
+                {page > 1 ? (
+                  <Link
+                    href={`/events?page=${page - 1}`}
+                    className="text-xs font-bold text-navy-900 underline decoration-gold-400 decoration-2 underline-offset-4"
+                  >
+                    ← Newer
+                  </Link>
+                ) : (
+                  <span aria-hidden className="text-xs font-semibold text-ink-400" />
+                )}
+                <span className="text-[11.5px] text-ink-400">
+                  Page {past.page} of {pastTotalPages}
+                </span>
+                {page < pastTotalPages ? (
+                  <Link
+                    href={`/events?page=${page + 1}`}
+                    className="text-xs font-bold text-navy-900 underline decoration-gold-400 decoration-2 underline-offset-4"
+                  >
+                    Older →
+                  </Link>
+                ) : (
+                  <span aria-hidden className="text-xs font-semibold text-ink-400" />
+                )}
+              </nav>
+            ) : null}
           </Container>
         </Section>
       ) : null}
     </>
+  );
+}
+
+/** Quiet placeholder while the events lists stream in. */
+function EventsSkeleton() {
+  return (
+    <Section aria-busy="true" aria-label="Loading events">
+      <Container>
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="flex flex-col gap-3 rounded-xl border border-line bg-white p-6"
+            >
+              <div className="h-3 w-20 animate-pulse rounded bg-gray-100" />
+              <div className="h-5 w-3/4 animate-pulse rounded bg-gray-100" />
+              <div className="h-3 w-full animate-pulse rounded bg-gray-100" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-gray-100" />
+            </div>
+          ))}
+        </div>
+      </Container>
+    </Section>
   );
 }
