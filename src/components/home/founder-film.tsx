@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { MaskReveal } from "@/components/site/motion";
 import { Container } from "@/components/ui";
 
 /** The founder's flagship film, resolved once at publish time. */
@@ -87,6 +88,8 @@ export function FounderFilm() {
           </div>
         </div>
 
+        {/* The film frame unveils sideways, like a slide entering a projector. */}
+        <MaskReveal from="left" className="rounded-2xl">
         <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-navy-900 shadow-[0_44px_100px_-40px_rgba(0,0,0,0.9)]">
           {loaded ? (
             <iframe
@@ -136,6 +139,7 @@ export function FounderFilm() {
             </button>
           )}
         </div>
+        </MaskReveal>
       </Container>
     </section>
   );

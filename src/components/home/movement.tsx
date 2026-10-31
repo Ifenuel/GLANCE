@@ -2,6 +2,7 @@ import Image from "next/image";
 import chapterAudience from "@/assets/chapter-audience.jpg";
 import { ButtonLink } from "@/components/button-link";
 import { ChapterIcon, MemberIcon, OpportunityIcon, PartnerIcon } from "@/components/icons";
+import { Parallax, ScrubLine } from "@/components/site/motion";
 import { Reveal } from "@/components/site/reveal";
 import { Container } from "@/components/ui";
 
@@ -29,6 +30,9 @@ export function Movement() {
               A youth-led movement developing informed,
               <span className="text-navy-500"> capable leaders for Nigeria.</span>
             </h2>
+            <div className="mt-6 max-w-[220px]">
+              <ScrubLine className="from-gold-500 via-gold-500/60" />
+            </div>
             <p className="mt-6 max-w-[540px] text-[14.5px] leading-[1.9] text-ink-500">
               GLANCE is a youth-led organisation of committed students, guided
               by the values of commitment to nation-building. Our mission is to
@@ -45,13 +49,17 @@ export function Movement() {
           <Reveal delay={110}>
             <div className="group relative overflow-hidden rounded-2xl border border-line bg-white shadow-[0_28px_56px_-40px_rgba(5,42,92,0.45)]">
               <div className="relative aspect-16/11 w-full overflow-hidden">
-                <Image
-                  src={chapterAudience}
-                  alt="Students taking part in a GLANCE campus session"
-                  fill
-                  sizes="(min-width: 1024px) 540px, 100vw"
-                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-                />
+                {/* The founding shot drifts at its own speed as the visitor
+                    passes; a quieter travel keeps touch scrolling natural. */}
+                <Parallax range={7} mobileRange={4} className="absolute inset-x-0 -inset-y-[10%]">
+                  <Image
+                    src={chapterAudience}
+                    alt="Students taking part in a GLANCE campus session"
+                    fill
+                    sizes="(min-width: 1024px) 540px, 100vw"
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                  />
+                </Parallax>
               </div>
               <div className="border-t border-line p-6">
                 <p className="text-[17px] font-extrabold text-navy-900">

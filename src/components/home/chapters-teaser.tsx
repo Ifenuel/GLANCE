@@ -6,6 +6,7 @@ import chapterLecture from "@/assets/chapter-lecture.jpg";
 import heroCrowd from "@/assets/hero-crowd.jpg";
 import { ButtonLink } from "@/components/button-link";
 import { ArrowRight } from "@/components/icons";
+import { MaskReveal, StaggerGroup } from "@/components/site/motion";
 import { Reveal } from "@/components/site/reveal";
 import { Container, EmptyState, SectionHeading, VerifiedNote } from "@/components/ui";
 import { listPublicChapters } from "@/server/content";
@@ -66,10 +67,12 @@ export async function ChaptersTeaser() {
             />
           </div>
         ) : (
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          // One observer drives the family: the chapter posters arrive in
+          // choreography, each unveiling through its own mask.
+          <StaggerGroup className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {featured.map((chapter, index) => (
-              <Reveal key={chapter.id} delay={index * 80}>
-                <Link
+              <MaskReveal key={chapter.id} from={index % 2 ? "left" : "bottom"}>
+              <Link
                   href={`/chapters/${chapter.code}`}
                   className="lift group relative flex aspect-4/5 flex-col overflow-hidden rounded-xl border border-navy-800/40 bg-navy-950"
                 >
@@ -100,9 +103,9 @@ export async function ChaptersTeaser() {
                     </span>
                   </div>
                 </Link>
-              </Reveal>
+              </MaskReveal>
             ))}
-          </div>
+          </StaggerGroup>
         )}
 
         <div className="mt-6 text-[12px]">

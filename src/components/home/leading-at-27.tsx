@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { ButtonLink } from "@/components/button-link";
+import { Parallax } from "@/components/site/motion";
 import { Reveal } from "@/components/site/reveal";
 import { Container, Eyebrow } from "@/components/ui";
 import { leadingAt27 } from "@/lib/glance";
@@ -13,7 +14,9 @@ export function LeadingAt27() {
       />
       <Container className="relative grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-center">
         <Reveal className="flex justify-center lg:justify-start">
-          <div className="drift-slow">
+          {/* The book floats against scroll — the drift becomes scroll-driven
+              so the object reads as part of the film, not a floating prop. */}
+          <Parallax range={9} mobileRange={5} scaleTo={1}>
             <Image
               src="/media/leading-at-27-book.webp"
               alt="Leading at 27 by Seyi Adisa"
@@ -22,7 +25,7 @@ export function LeadingAt27() {
               sizes="(min-width: 1024px) 420px, (min-width: 640px) 70vw, 100vw"
               className="h-auto w-full max-w-[420px] cursor-default rounded-2xl shadow-[0_32px_70px_-24px_rgba(0,0,0,0.8)]"
             />
-          </div>
+          </Parallax>
         </Reveal>
 
         <Reveal delay={110}>
@@ -45,7 +48,7 @@ export function LeadingAt27() {
                 { label: "Principles", value: "Character, Influence, Purpose" },
                 { label: "Published", value: leadingAt27.launched },
               ] as const
-            ).map((item, index) => (
+            ).map((item) => (
               <div
                 key={item.label}
                 className="rule-grow rounded-lg p-3 transition-colors duration-300 hover:bg-white/[0.06]"

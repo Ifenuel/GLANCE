@@ -4,6 +4,7 @@ import heroCrowd from "@/assets/hero-crowd.jpg";
 import { ButtonLink } from "@/components/button-link";
 import { GLANCEBroadcastSection } from "@/components/home/broadcast";
 import { Reveal } from "@/components/site/reveal";
+import { KineticHeading, Parallax } from "@/components/site/motion";
 import { Container } from "@/components/ui";
 import { platformSnapshot } from "@/server/content";
 
@@ -60,14 +61,22 @@ export default async function ImpactPage() {
       {/* ── Impact hero: the real GLANCE crowd as the backdrop ───────────── */}
       <section className="relative overflow-hidden bg-[#06142e] py-16 text-white lg:py-24">
         <div aria-hidden="true" className="absolute inset-0">
-          <Image
-            src={heroCrowd}
-            alt=""
-            fill
-            sizes="100vw"
-            className="ken-burns object-cover"
-            priority
-          />
+          <Parallax
+            range={9}
+            mobileRange={5}
+            scaleTo={1.02}
+            scaleFrom={1.16}
+            className="absolute inset-0"
+          >
+            <Image
+              src={heroCrowd}
+              alt=""
+              fill
+              sizes="100vw"
+              className="object-cover"
+              priority
+            />
+          </Parallax>
           {/* Scrims keep the photograph visible but the words readable. */}
           <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(6,20,46,0.96)_0%,rgba(6,20,46,0.88)_48%,rgba(6,20,46,0.62)_100%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(110%_80%_at_88%_10%,transparent_38%,rgba(6,20,46,0.5)_100%)]" />
@@ -80,9 +89,11 @@ export default async function ImpactPage() {
               <span className="text-xs font-bold uppercase tracking-[0.22em] text-gold-400">
                 Real people. Real change.
               </span>
-              <h1 className="mt-4 max-w-[640px] text-balance text-[clamp(32px,4.6vw,54px)] font-extrabold leading-[1.06] tracking-[-0.03em] text-white">
-                Measured in young leaders, not promises.
-              </h1>
+              <KineticHeading
+                as="h1"
+                text="Measured in young leaders, not promises."
+                className="mt-4 max-w-[640px] text-balance text-[clamp(32px,4.6vw,54px)] font-extrabold leading-[1.06] tracking-[-0.03em] text-white"
+              />
               <div
                 aria-hidden="true"
                 className="mt-6 h-px w-28 bg-gradient-to-r from-gold-400 via-gold-400/40 to-transparent"
