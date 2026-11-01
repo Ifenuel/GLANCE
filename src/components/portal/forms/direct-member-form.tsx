@@ -87,6 +87,25 @@ const errorBanner = (state: FormState) => {
 const inputClass =
   "w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[14px] text-navy-900 placeholder:text-ink-400 focus:border-navy-500 focus:ring-2 focus:ring-navy-500/15 focus:outline-none";
 
+/** Declared at module level so it is not recreated on every parent render. */
+function Select({
+  name,
+  options,
+}: {
+  name: string;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <select name={name} className={inputClass} required={name === "academicLevel"}>
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 const academicOptions = [
   { value: "", label: "Select level" },
   { value: "YEAR_1", label: "Year 1" },
@@ -156,18 +175,6 @@ export function DirectMemberForm({
   }, [state]);
 
   const dismissNotice = () => setNotice(null);
-
-  function Select({ name, options }: { name: string; options: { value: string; label: string }[] }) {
-    return (
-      <select name={name} className={inputClass} required={name === "academicLevel"}>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    );
-  }
 
   return (
     <form ref={formRef} action={formAction} className="space-y-6">
@@ -284,7 +291,7 @@ export function DirectMemberForm({
       <div className="rounded-xl border border-line bg-navy-50/50 px-4 py-3 text-[12px] leading-5 text-ink-500">
         Every member keeps one permanent GLANCE ID for life — even when they
         graduate, change chapter or return as alumni. The digital ID card can
-        be printed or downloaded at any time from the member's page, after an
+        be printed or downloaded at any time from the member&apos;s page, after an
         avatar photo is uploaded.
       </div>
 
@@ -311,7 +318,7 @@ export function DirectMemberForm({
           Register &amp; open ID card
         </SubmitButton>
         <p className="text-[11.5px] leading-4 text-ink-400">
-          Register now, or register and go straight to the member's digital
+          Register now, or register and go straight to the member&apos;s digital
           ID card.
         </p>
       </div>

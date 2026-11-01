@@ -71,12 +71,12 @@ export function Card({ children, className, as: Tag = "div", title, label }: {
   );
 }
 
-export function CardTitle({ children }: { children: ReactNode }) {
-  return <h3 className="text-[15px] font-extrabold text-navy-900">{children}</h3>;
+export function CardTitle({ children, className }: { children: ReactNode; className?: string }) {
+  return <h3 className={`text-[15px] font-extrabold text-navy-900 ${className ?? ""}`}>{children}</h3>;
 }
 
-export function CardLabel({ children }: { children: ReactNode }) {
-  return <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-ink-400">{children}</p>;
+export function CardLabel({ children, className }: { children: ReactNode; className?: string }) {
+  return <p className={`text-[11px] font-bold uppercase tracking-[0.1em] text-ink-400 ${className ?? ""}`}>{children}</p>;
 }
 
 export function Event({ children }: { children: ReactNode }) {
@@ -130,7 +130,9 @@ export function StatusDot({ tone }: { tone: "active" | "pending" | "danger" }) {
  * Internal confirmation notes are no longer shown to visitors. Kept as a
  * no-op so existing call sites compile while the copy stays off the page.
  */
-export function VerifiedNote({ children: _children }: { children: ReactNode }) {
+export function VerifiedNote({ children }: { children: ReactNode }) {
+  // The note intentionally renders nothing; call sites compile unchanged.
+  void children;
   return null;
 }
 

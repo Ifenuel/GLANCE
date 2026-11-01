@@ -1,16 +1,11 @@
-"use client";
-
 import type { ReactNode } from "react";
 import Image, { type StaticImageData } from "next/image";
-import { KineticHeading, Parallax } from "@/components/site/motion";
 import { Container } from "@/components/ui";
 
 /**
- * The page-opening hero, directed like every film's establishing shot:
- * the headline rises line by line out of its own masks, a photographic
- * background (when supplied) breathes on parallax, and the gold seam draws
- * itself as the visitor settles into the page. The copy and props are the
- * same as before — the delivery is now part of the site's motion language.
+ * The page-opening hero: golden kicker, large display headline and a hairline
+ * gold seam that ties every inner page to the dark canvas. A photographic
+ * background sits under twin scrims when one is supplied.
  */
 export function PageHeader({
   eyebrow,
@@ -34,22 +29,14 @@ export function PageHeader({
     <section className="navy-wash relative overflow-hidden text-white">
       {background ? (
         <div aria-hidden="true" className="absolute inset-0">
-          <Parallax
-            range={8}
-            mobileRange={5}
-            scaleTo={1.02}
-            scaleFrom={1.16}
-            className="absolute inset-x-0 -inset-y-[8%]"
-          >
-            <Image
-              src={background}
-              alt={backgroundAlt ?? ""}
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover"
-            />
-          </Parallax>
+          <Image
+            src={background}
+            alt={backgroundAlt ?? ""}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
           {/* Scrims keep the navy character but let the photo breathe. */}
           <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(6,24,53,0.95)_0%,rgba(6,24,53,0.86)_42%,rgba(6,24,53,0.58)_100%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_100%_10%,transparent_40%,rgba(6,24,53,0.75)_100%)]" />
@@ -62,14 +49,11 @@ export function PageHeader({
       />
 
       <Container className="relative grid gap-10 pb-14 pt-16 sm:pt-20 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-center lg:pb-20 lg:pt-24">
-        <div className="page-header-reveal">
+        <div>
           <p className="kicker">{eyebrow}</p>
-          <KineticHeading
-            as="h1"
-            text={title}
-            className="display-cinematic mt-5 max-w-[760px] text-[clamp(34px,4.8vw,58px)]"
-            delay={0.1}
-          />
+          <h1 className="display-cinematic mt-5 max-w-[760px] text-[clamp(34px,4.8vw,58px)]">
+            {title}
+          </h1>
           <div
             aria-hidden="true"
             className="mt-6 h-px w-24 bg-gradient-to-r from-gold-400 via-gold-400/40 to-transparent"

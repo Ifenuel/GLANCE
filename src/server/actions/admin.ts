@@ -563,7 +563,12 @@ export async function updateMemberAction(
   };
 }
 
-export async function createAgidAdminAction(
+const STAFF_ROLES: Record<"AGID_ADMIN" | "COMM_MANAGER", string> = {
+  AGID_ADMIN: "GLANCE team",
+  COMM_MANAGER: "Communications & media",
+};
+
+export async function createStaffAccountAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
@@ -573,6 +578,11 @@ export async function createAgidAdminAction(
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const name = String(formData.get("name") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const roleInput = String(formData.get("role") ?? "");
+  if (roleInput !== "AGID_ADMIN" && roleInput !== "COMM_MANAGER") {
+    return { status: "error", message: "Select which staff role to create." };
+  }
+  const role: "AGID_ADMIN" | "COMM_MANAGER" = roleInput;
 
   if (!email || !name || password.length < 10) {
     return {
@@ -588,7 +598,7 @@ export async function createAgidAdminAction(
     data: {
       email,
       name,
-      role: "AGID_ADMIN",
+      role,
       status: "ACTIVE",
       passwordHash: await hashPassword(password),
       emailVerifiedAt: new Date(),
@@ -599,17 +609,17 @@ export async function createAgidAdminAction(
   await writeAudit({
     actorId: actor.id,
     actorRole: actor.role,
-    action: "user.create_agid_admin",
+    action: role === "AGID_ADMIN" ? "user.create_agid_admin" : "user.create_comm_manager",
     entityType: "User",
     entityId: user.id,
     ip,
-    metadata: { email },
+    metadata: { email, role },
   });
 
   return {
     status: "success",
-    message: `${name} can now sign in as a GLANCE administrator.`,
-    success: `${name} can now sign in as a GLANCE administrator.`,
+    message: `${name} can now sign in as ${STAFF_ROLES[role]}.`,
+    success: `${name} can now sign in as ${STAFF_ROLES[role]}.`,
   };
 }
 

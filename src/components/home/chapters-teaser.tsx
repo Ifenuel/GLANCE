@@ -6,7 +6,7 @@ import chapterLecture from "@/assets/chapter-lecture.jpg";
 import heroCrowd from "@/assets/hero-crowd.jpg";
 import { ButtonLink } from "@/components/button-link";
 import { ArrowRight } from "@/components/icons";
-import { MaskReveal, StaggerGroup } from "@/components/site/motion";
+import { ChapterNetwork, type NetworkNode } from "@/components/home/chapter-network";
 import { Reveal } from "@/components/site/reveal";
 import { Container, EmptyState, SectionHeading, VerifiedNote } from "@/components/ui";
 import { listPublicChapters } from "@/server/content";
@@ -54,6 +54,30 @@ export async function ChaptersTeaser() {
           </Reveal>
         </div>
 
+        {chapters.length > 1 ? (
+          <Reveal delay={60}>
+            <div className="mt-12 overflow-hidden rounded-3xl border border-navy-800/60 bg-navy-950 px-2 py-4 sm:px-6">
+              {/* The network band: the deactivated-chapter set drawn as one
+                  connected mesh. Distinct institutions only, capped so the
+                  ring stays legible; every node links to its chapter page. */}
+              <ChapterNetwork
+                nodes={(
+                  distinct.length > 0
+                    ? distinct
+                    : chapters
+                )
+                  .slice(0, 8)
+                  .map<NetworkNode>((chapter) => ({
+                    id: chapter.id,
+                    label: chapter.institution,
+                    city: chapter.city,
+                    code: chapter.code,
+                  })                )}
+              />
+            </div>
+          </Reveal>
+        ) : null}
+
         {featured.length === 0 ? (
           <div className="mt-10">
             <EmptyState
@@ -67,12 +91,10 @@ export async function ChaptersTeaser() {
             />
           </div>
         ) : (
-          // One observer drives the family: the chapter posters arrive in
-          // choreography, each unveiling through its own mask.
-          <StaggerGroup className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {featured.map((chapter, index) => (
-              <MaskReveal key={chapter.id} from={index % 2 ? "left" : "bottom"}>
-              <Link
+              <Reveal key={chapter.id} delay={index * 80}>
+                <Link
                   href={`/chapters/${chapter.code}`}
                   className="lift group relative flex aspect-4/5 flex-col overflow-hidden rounded-xl border border-navy-800/40 bg-navy-950"
                 >
@@ -103,9 +125,9 @@ export async function ChaptersTeaser() {
                     </span>
                   </div>
                 </Link>
-              </MaskReveal>
+              </Reveal>
             ))}
-          </StaggerGroup>
+          </div>
         )}
 
         <div className="mt-6 text-[12px]">

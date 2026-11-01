@@ -4,7 +4,6 @@ import { getCurrentUser } from "@/server/auth";
 import { auditEntry } from "@/server/audit";
 import {
     Card,
-    CardTitle,
     GLANCE,
     VerifiedNote
   } from "@/components/ui";
@@ -56,15 +55,15 @@ export default async function MemberDetailPage({
         ← Members
       </Link>
 
-      <Card className="border-0 bg-navy-950/5 p-6">
+      <Card className="border-0 bg-navy-900 p-6">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="flex items-start gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-navy-900 text-white">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white">
               <GLANCE className="h-8 w-8" />
             </div>
             <div>
-              <CardTitle>{member.fullName}</CardTitle>
-              <p className="text-[13.5px] text-ink-300">
+              <h3 className="text-[15px] font-extrabold text-white">{member.fullName}</h3>
+              <p className="text-[13.5px] text-navy-100/80">
                 {member.institution} · {member.chapter?.name} ({member.chapter?.code})
               </p>
               <p className="font-mono text-[12px] font-semibold text-white/70">
@@ -74,8 +73,8 @@ export default async function MemberDetailPage({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl bg-white/5 p-4">
-              <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Type</dt>
+            <div className="rounded-xl bg-white/10 p-4">
+              <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-white/60">Type</dt>
               <dd className="text-[13px] font-semibold text-white">
                 {member.membershipCategory === "STUDENT"
                   ? "Student"
@@ -84,12 +83,12 @@ export default async function MemberDetailPage({
                     : "Alumni"}
               </dd>
             </div>
-            <div className="rounded-xl bg-white/5 p-4">
-              <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Chapter</dt>
+            <div className="rounded-xl bg-white/10 p-4">
+              <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-white/60">Chapter</dt>
               <dd className="text-[13px] font-semibold text-white">{member.chapter?.name}</dd>
             </div>
-            <div className="rounded-xl bg-white/5 p-4">
-              <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Registered</dt>
+            <div className="rounded-xl bg-white/10 p-4">
+              <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-white/60">Registered</dt>
               <dd className="text-[13px] font-semibold text-white">{formatDate(member.registeredAt)}</dd>
             </div>
           </div>
@@ -99,37 +98,37 @@ export default async function MemberDetailPage({
       <Card>
         <h3 className="text-base font-extrabold text-navy-900">Member record</h3>
         <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl bg-white/5 p-4">
+          <div className="rounded-xl bg-navy-50 p-4">
             <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Full name</dt>
-            <dd className="text-[13px] font-semibold text-white">{member.fullName}</dd>
+            <dd className="text-[13px] font-semibold text-navy-900">{member.fullName}</dd>
           </div>
-          <div className="rounded-xl bg-white/5 p-4">
+          <div className="rounded-xl bg-navy-50 p-4">
             <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Email</dt>
-            <dd className="text-[13px] font-semibold text-white">{member.user.email}</dd>
+            <dd className="text-[13px] font-semibold text-navy-900">{member.user.email}</dd>
           </div>
-          <div className="rounded-xl bg-white/5 p-4">
+          <div className="rounded-xl bg-navy-50 p-4">
             <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Institution</dt>
-            <dd className="text-[13px] font-semibold text-white">{member.institution}</dd>
+            <dd className="text-[13px] font-semibold text-navy-900">{member.institution}</dd>
           </div>
-          <div className="rounded-xl bg-white/5 p-4">
+          <div className="rounded-xl bg-navy-50 p-4">
             <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Department</dt>
-            <dd className="text-[13px] font-semibold text-white">{member.department ?? "Not applicable"}</dd>
+            <dd className="text-[13px] font-semibold text-navy-900">{member.department ?? "Not applicable"}</dd>
           </div>
-          <div className="rounded-xl bg-white/5 p-4">
+          <div className="rounded-xl bg-navy-50 p-4">
             <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Academic level</dt>
-            <dd className="text-[13px] font-semibold text-white">{member.academicLevel ?? "Not applicable"}</dd>
+            <dd className="text-[13px] font-semibold text-navy-900">{member.academicLevel ?? "Not applicable"}</dd>
           </div>
-          <div className="rounded-xl bg-white/5 p-4">
+          <div className="rounded-xl bg-navy-50 p-4">
             <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Gender</dt>
-            <dd className="text-[13px] font-semibold text-white">{member.gender}</dd>
+            <dd className="text-[13px] font-semibold text-navy-900">{member.gender}</dd>
           </div>
-          <div className="rounded-xl bg-white/5 p-4">
+          <div className="rounded-xl bg-navy-50 p-4">
             <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Position</dt>
-            <dd className="text-[13px] font-semibold text-white">
+            <dd className="text-[13px] font-semibold text-navy-900">
               {member.position ?? "Not set by administrator"}
             </dd>
           </div>
-          <div className="rounded-xl bg-white/5 p-4">
+          <div className="rounded-xl bg-navy-50 p-4">
             <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Role</dt>
             <dd className={`text-[13px] font-semibold ${member.isExecutive ? "text-emerald-600" : "text-ink-500"}`}>
               {member.isExecutive ? "Executive" : "Member"}

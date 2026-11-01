@@ -271,7 +271,7 @@ export function JoinForm({ chapterCodes }: { chapterCodes: string[] }) {
           <>
             I consent to GLANCE storing and processing the personal
             information in this application for the purpose of membership
-            administration. I understand that GLANCE and my chapter's coordinators can see my
+            administration. I understand that GLANCE and my chapter&apos;s coordinators can see my
             record and that my details are not published publicly.
           </>
         }

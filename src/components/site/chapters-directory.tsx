@@ -21,6 +21,42 @@ type ChapterRow = {
 type SortKey = "name" | "institution" | "code" | "location" | "members";
 
 /**
+ * Declared at module level so it is not recreated on every parent render.
+ * The active sort comes in as props instead of closing over parent state.
+ */
+function SortLabel({
+  label,
+  column,
+  sortKey,
+  ascending,
+  sortBy,
+}: {
+  label: string;
+  column: SortKey;
+  sortKey: SortKey;
+  ascending: boolean;
+  sortBy: (key: SortKey) => void;
+}) {
+  const active = sortKey === column;
+  return (
+    <button
+      type="button"
+      onClick={() => sortBy(column)}
+      className="inline-flex items-center gap-1.5 font-bold tracking-[0.08em] uppercase transition-colors hover:text-navy-900"
+      aria-label={`Sort by ${label}`}
+    >
+      {label}
+      <span
+        aria-hidden="true"
+        className={`text-[9px] transition-opacity ${active ? "opacity-100" : "opacity-30"}`}
+      >
+        {active && !ascending ? "▲" : "▼"}
+      </span>
+    </button>
+  );
+}
+
+/**
  * The chapter directory as a proper data table: search, institution and state
  * filters, sortable columns, and a stacked list on phones so nothing is
  * squashed. All data is already loaded server-side; filtering is client-side
@@ -97,26 +133,6 @@ export function ChaptersDirectory({ chapters }: { chapters: ChapterRow[] }) {
       setSortKey(key);
       setAscending(true);
     }
-  }
-
-  function SortLabel({ label, column }: { label: string; column: SortKey }) {
-    const active = sortKey === column;
-    return (
-      <button
-        type="button"
-        onClick={() => sortBy(column)}
-        className="inline-flex items-center gap-1.5 font-bold tracking-[0.08em] uppercase transition-colors hover:text-navy-900"
-        aria-label={`Sort by ${label}`}
-      >
-        {label}
-        <span
-          aria-hidden="true"
-          className={`text-[9px] transition-opacity ${active ? "opacity-100" : "opacity-30"}`}
-        >
-          {active && !ascending ? "▲" : "▼"}
-        </span>
-      </button>
-    );
   }
 
   return (
@@ -211,19 +227,19 @@ export function ChaptersDirectory({ chapters }: { chapters: ChapterRow[] }) {
               <thead>
                 <tr className="border-b border-line bg-navy-50/60 text-[10.5px] font-bold tracking-[0.08em] text-ink-500 uppercase">
                   <th scope="col" className="px-5 py-3.5">
-                    <SortLabel label="Chapter Name" column="name" />
+                    <SortLabel label="Chapter Name" column="name" sortKey={sortKey} ascending={ascending} sortBy={sortBy} />
                   </th>
                   <th scope="col" className="px-4 py-3.5">
-                    <SortLabel label="Institution" column="institution" />
+                    <SortLabel label="Institution" column="institution" sortKey={sortKey} ascending={ascending} sortBy={sortBy} />
                   </th>
                   <th scope="col" className="px-4 py-3.5">
-                    <SortLabel label="Code" column="code" />
+                    <SortLabel label="Code" column="code" sortKey={sortKey} ascending={ascending} sortBy={sortBy} />
                   </th>
                   <th scope="col" className="px-4 py-3.5">
-                    <SortLabel label="Location" column="location" />
+                    <SortLabel label="Location" column="location" sortKey={sortKey} ascending={ascending} sortBy={sortBy} />
                   </th>
                   <th scope="col" className="px-4 py-3.5 text-right">
-                    <SortLabel label="Members" column="members" />
+                    <SortLabel label="Members" column="members" sortKey={sortKey} ascending={ascending} sortBy={sortBy} />
                   </th>
                   <th scope="col" className="px-4 py-3.5">
                     Status

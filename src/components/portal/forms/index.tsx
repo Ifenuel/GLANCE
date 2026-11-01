@@ -9,7 +9,7 @@ export { UpdateChapterForm } from "./update-chapter-form";
 export { ReportForm } from "./report-form";
 export { ProfileForm } from "./profile-form";
 export { MemberEditForm } from "./member-edit-form";
-export { CreateAgidAdminForm } from "./create-agid-admin-form";
+export { CreateStaffForm } from "./create-staff-form";
 export { ChapterApplicationReviewForm } from "./chapter-application-review-form";
 export { JoinApplicationReviewForm } from "./join-application-review-form";
 export { InvitationAcceptanceForm } from "./invitation-acceptance-form";

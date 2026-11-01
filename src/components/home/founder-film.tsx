@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MaskReveal } from "@/components/site/motion";
 import { Container } from "@/components/ui";
 
 /** The founder's flagship film, resolved once at publish time. */
@@ -88,9 +87,14 @@ export function FounderFilm() {
           </div>
         </div>
 
-        {/* The film frame unveils sideways, like a slide entering a projector. */}
-        <MaskReveal from="left" className="rounded-2xl">
-        <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-navy-900 shadow-[0_44px_100px_-40px_rgba(0,0,0,0.9)]">
+        {/* Cinematic frame: a graded edge highlights the screen, and the
+            poster drifts subtly with the scroll like an emerging title card. */}
+        <div className="relative">
+          <div
+            aria-hidden="true"
+            className="absolute -inset-3 rounded-[2rem] border border-gold-400/15 bg-gradient-to-br from-gold-400/10 via-transparent to-navy-600/30"
+          />
+          <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-navy-900 shadow-[0_44px_100px_-40px_rgba(0,0,0,0.9)]">
           {loaded ? (
             <iframe
               src={`${FILM_EMBED}&autoplay=1`}
@@ -117,17 +121,26 @@ export function FounderFilm() {
                 fill
                 unoptimized
                 sizes="(min-width: 1024px) 640px, 100vw"
-                className="object-cover"
+                className="object-cover transition-transform duration-2000 ease-out group-hover:scale-[1.03]"
               />
               <span
                 aria-hidden="true"
                 className="absolute inset-0 bg-[radial-gradient(120%_100%_at_30%_20%,rgba(6,20,46,0.45),rgba(3,12,28,0.82))]"
               />
               <span className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-                <span className="grid h-16 w-16 place-items-center rounded-full bg-gold-400 text-navy-950 shadow-[0_16px_44px_-14px_rgba(251,202,75,0.7)] transition-transform duration-300 group-hover:scale-110">
-                  <svg viewBox="0 0 12 12" className="h-4 w-4 translate-x-[1px]" fill="currentColor" aria-hidden="true">
-                    <path d="M2 1.2v9.6L10.5 6z" />
-                  </svg>
+                {/* The broadcast's play chip small, gilded and breathing,
+                    instead of a flat disc — the same control language the
+                    film band uses, so play reads as one system site-wide. */}
+                <span className="relative inline-grid place-items-center">
+                  <span
+                    aria-hidden="true"
+                    className="film-pulse absolute h-14 w-14 rounded-full border border-gold-400/40"
+                  />
+                  <span className="grid h-12 w-12 place-items-center rounded-full border border-white/40 bg-navy-950/85 text-white shadow-[0_10px_28px_-8px_rgba(3,12,28,0.9)] backdrop-blur-sm transition-all duration-300 group-hover:border-gold-400/70 group-hover:bg-navy-950 group-hover:text-gold-300">
+                    <svg viewBox="0 0 12 12" className="h-3.5 w-3.5 translate-x-[1px]" fill="currentColor" aria-hidden="true">
+                      <path d="M2 1.2v9.6L10.5 6z" />
+                    </svg>
+                  </span>
                 </span>
                 <span className="max-w-[85%] text-[16px] font-extrabold text-white sm:text-[18px]">
                   “When they don’t want you to succeed”
@@ -138,8 +151,8 @@ export function FounderFilm() {
               </span>
             </button>
           )}
+          </div>
         </div>
-        </MaskReveal>
       </Container>
     </section>
   );

@@ -17,7 +17,16 @@ export default async function ChapterMembersPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const chapter = await db.chapter.findUnique({ where: { id }, select: { name: true, code: true } });
+  // Either the internal id or the human-readable chapter code resolves here.
+  const chapter =
+    (await db.chapter.findUnique({
+      where: { id },
+      select: { id: true, name: true, code: true },
+    })) ??
+    (await db.chapter.findUnique({
+      where: { code: id.toUpperCase() },
+      select: { id: true, name: true, code: true },
+    }));
   if (!chapter) return <div>Chapter not found.</div>;
 
   // Server-side scoping: only GLANCE or this chapter's administrators may view.
@@ -26,11 +35,11 @@ export default async function ChapterMembersPage({
     viewer &&
     (viewer.role === "SUPER_ADMIN" ||
       viewer.role === "AGID_ADMIN" ||
-      (viewer.role === "CHAPTER_ADMIN" && viewer.chapterId === id));
+      (viewer.role === "CHAPTER_ADMIN" && viewer.chapterId === chapter.id));
   if (!mayView) return <div>Chapter not found.</div>;
 
   const members = await db.memberProfile.findMany({
-    where: { chapterId: id, status: "ACTIVE" },
+    where: { chapterId: chapter.id, status: "ACTIVE" },
     orderBy: { registeredAt: "desc" },
     select: {
       id: true,
@@ -46,7 +55,7 @@ export default async function ChapterMembersPage({
     },
   });
 
-  const exportUrl = await exportMembersCsv(id);
+  const exportUrl = await exportMembersCsv(chapter.id);
 
   return (
     <Container>

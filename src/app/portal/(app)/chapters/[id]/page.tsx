@@ -2,11 +2,9 @@ import { db } from "@/server/db";
 import { getCurrentUser } from "@/server/auth";
 import { auditEntry } from "@/server/audit";
 import {
-    ButtonLink,
     Card,
     CardTitle,
     GLANCE,
-    CardLabel,
     VerifiedNote
   } from "@/components/ui";
 import { formatDate } from "@/lib/format";
@@ -15,7 +13,7 @@ import Link from "next/link";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const chapter = await db.chapter.findUnique({ where: { id } });
+  const chapter = await findChapter(id || "");
   return {
     title: chapter ? `${chapter.name} | chapter detail` : "Chapter detail",
     description: chapter
@@ -24,13 +22,27 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
+/**
+ * Chapters are linked to by their internal id, but the human-readable code
+ * (e.g. GLN-AAT-001) is popular outside the dashboard — accept either so a
+ * code never renders as "Chapter not found".
+ */
+async function findChapter(idOrCode: string) {
+  return (
+    (await db.chapter.findUnique({ where: { id: idOrCode } })) ??
+    (await db.chapter.findUnique({
+      where: { code: idOrCode.toUpperCase() },
+    }))
+  );
+}
+
 export default async function ChapterDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const chapter = await db.chapter.findUnique({ where: { id } });
+  const chapter = await findChapter(id);
 
   if (!chapter) return <div>Chapter not found.</div>;
 
@@ -44,7 +56,7 @@ export default async function ChapterDetailPage({
   if (!mayView) return <div>Chapter not found.</div>;
 
   const memberCounts = await db.memberProfile.count({
-    where: { chapterId: id, status: "ACTIVE" },
+    where: { chapterId: chapter.id, status: "ACTIVE" },
   });
 
   const statusLabel =
@@ -67,7 +79,7 @@ export default async function ChapterDetailPage({
         ← Chapters
       </Link>
 
-      <Card className="border-0 bg-navy-950/5 p-6">
+      <Card className="border-0 bg-navy-900 p-6">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="flex items-start gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-navy-900 text-white">
@@ -75,12 +87,12 @@ export default async function ChapterDetailPage({
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <CardTitle>{chapter.name}</CardTitle>
-                <span className="rounded-full bg-navy-900 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white">
+                <CardTitle className="text-white">{chapter.name}</CardTitle>
+                <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white">
                   {statusLabel}
                 </span>
               </div>
-              <p className="text-[13.5px] text-ink-300">
+              <p className="text-[13.5px] text-navy-100/80">
                 {chapter.institution} · {chapter.city}, {chapter.state}
               </p>
               <p className="font-mono text-[12px] font-semibold text-white/70">
@@ -90,38 +102,38 @@ export default async function ChapterDetailPage({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl bg-white/5 p-4">
-              <CardLabel>Members</CardLabel>
+            <div className="rounded-xl bg-white/10 p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-white/60">Members</p>
               <dd className="text-lg font-extrabold text-white">{memberCounts}</dd>
             </div>
-            <div className="rounded-xl bg-white/5 p-4">
-              <CardLabel>Institution</CardLabel>
+            <div className="rounded-xl bg-white/10 p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-white/60">Institution</p>
               <dd className="text-[13px] font-semibold text-white">{chapter.institution}</dd>
             </div>
-            <div className="rounded-xl bg-white/5 p-4">
-              <CardLabel>Contact</CardLabel>
+            <div className="rounded-xl bg-white/10 p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-white/60">Contact</p>
               <dd className="text-[13px] font-semibold text-white">{chapter.contactEmail ?? "Not set"}</dd>
             </div>
           </div>
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-xl bg-white/5 p-4">
-            <CardLabel>City</CardLabel>
+          <div className="rounded-xl bg-white/10 p-4">
+            <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-white/60">City</p>
             <dd className="text-[13px] font-semibold text-white">{chapter.city}</dd>
           </div>
-          <div className="rounded-xl bg-white/5 p-4">
-            <CardLabel>State</CardLabel>
+          <div className="rounded-xl bg-white/10 p-4">
+            <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-white/60">State</p>
             <dd className="text-[13px] font-semibold text-white">{chapter.state}</dd>
           </div>
-          <div className="rounded-xl bg-white/5 p-4">
-            <CardLabel>Created</CardLabel>
+          <div className="rounded-xl bg-white/10 p-4">
+            <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-white/60">Created</p>
             <dd className="text-[13px] font-semibold text-white">{formatDate(chapter.createdAt)}</dd>
           </div>
         </div>
 
         {chapter.description ? (
-          <p className="mt-4 text-[13.5px] leading-6 text-ink-200">{chapter.description}</p>
+          <p className="mt-4 text-[13.5px] leading-6 text-navy-100/80">{chapter.description}</p>
         ) : null}
 
         <div className="mt-6 flex flex-wrap gap-3">
@@ -131,12 +143,18 @@ export default async function ChapterDetailPage({
           >
             View members ({memberCounts})
           </a>
-          <ButtonLink href={`/portal/chapters/${id}/status`} variant="outline">
+          <a
+            href={`/portal/chapters/${id}/status`}
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-white/30 px-5 text-[13px] font-bold text-white transition-colors hover:border-white hover:bg-white/10"
+          >
             Change status
-          </ButtonLink>
-          <ButtonLink href={`/portal/chapters/${id}/invite`} variant="outline">
+          </a>
+          <a
+            href={`/portal/chapters/${id}/invite`}
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-white/30 px-5 text-[13px] font-bold text-white transition-colors hover:border-white hover:bg-white/10"
+          >
             Create administrator invite
-          </ButtonLink>
+          </a>
         </div>
 
         <div className="mt-6 border-t border-white/10 pt-6">

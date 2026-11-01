@@ -21,12 +21,42 @@ const connectionLimit = Math.max(
 const databaseUrl = process.env.DATABASE_URL;
 const pooledDatabaseUrl = databaseUrl
   ? // A URL that already carries connection_limit (our serverless settings
-    // recommend it) must win; never append a second, conflicting value. Also
-    // pgbouncer=true is what transaction-mode pooling requires of Prisma.
-    connectionLimitParamPresent(databaseUrl)
-    ? `${databaseUrl}${databaseUrl.includes("?") ? "&" : "?"}pool_timeout=30`
-    : `${databaseUrl}${databaseUrl.includes("?") ? "&" : "?"}connection_limit=${connectionLimit}&pool_timeout=30`
+    // recommend it) must win; never append a second, conflicting value.
+    // We always make sure pgbouncer=true is present because transaction-mode
+    // pooling (Supavisor port 6543 and other PgBouncer-style pools) drops
+    // server-side prepared statements between queries; with the flag Prisma
+    // stops preparing them and every query stays safe through the pool.
+    `${databaseUrl}${databaseUrl.includes("?") ? "&" : "?"}${
+      connectionLimitParamPresent(databaseUrl)
+        ? "pool_timeout=30"
+        : `connection_limit=${connectionLimit}&pool_timeout=30`
+    }
+      ${pgbouncerParamPresent(databaseUrl) ? "" : "&pgbouncer=true"}`
+    .replace(/\s/g, "")
   : undefined;
+
+function pgbouncerParamPresent(url: string): boolean {
+  try {
+    return new URL(url).searchParams.get("pgbouncer") !== null;
+  } catch {
+    return /([?&])pgbouncer=/.test(url);
+  }
+}
+
+/** Tag every connection with this app so the pool can be diagnosed later. */
+function withApplicationName(url: string): string {
+  const applicationName = "glance-prisma";
+  try {
+    const parsed = new URL(url);
+    if (!parsed.searchParams.has("application_name")) {
+      parsed.searchParams.set("application_name", applicationName);
+      return parsed.toString();
+    }
+  } catch {
+    // Not a parseable URL; leave it as-is.
+  }
+  return url;
+}
 
 function connectionLimitParamPresent(url: string): boolean {
   try {
@@ -39,7 +69,11 @@ function connectionLimitParamPresent(url: string): boolean {
 const base =
   globalForPrisma.prisma ??
   new PrismaClient({
-    ...(pooledDatabaseUrl ? { datasources: { db: { url: pooledDatabaseUrl } } } : {}),
+    ...(pooledDatabaseUrl
+      ? {
+          datasources: { db: { url: withApplicationName(pooledDatabaseUrl) } },
+        }
+      : {}),
     log: ["error"],
   });
 
@@ -61,8 +95,13 @@ function isTransient(error: unknown): boolean {
     message.includes("ECONNREFUSED") ||
     message.includes("ETIMEDOUT") ||
     message.includes("ENOTFOUND") ||
+    message.includes("EHOSTUNREACH") ||
+    message.includes("EAI_AGAIN") ||
+    message.includes("socket hang up") ||
+    message.includes("TLS handshake") ||
     message.includes("P1001") ||
     message.includes("P1002") ||
+    message.includes("P1017") ||
     message.includes("P1008") ||
     message.includes("prepared statement") ||
     message.includes("too many connections") ||
@@ -70,7 +109,7 @@ function isTransient(error: unknown): boolean {
   );
 }
 
-async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, attempts = 4): Promise<T> {
   let lastError: unknown;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
@@ -80,7 +119,10 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
       // Only connection-shaped failures are worth retrying; constraint
       // violations and auth errors must fail immediately.
       if (!isTransient(error) || attempt === attempts) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 150 * attempt));
+      // Exponential backoff (256ms → 512ms → 1024ms): a pooler that briefly
+      // refuses connections is usually back within a second or two, but a
+      // fixed 150ms retry can hit the same dead connection three times.
+      await new Promise((resolve) => setTimeout(resolve, 256 * 2 ** (attempt - 1)));
     }
   }
   throw lastError;

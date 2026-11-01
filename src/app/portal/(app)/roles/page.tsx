@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ROLES, requireUser } from "@/server/auth";
-import { Badge } from "@/components/ui";
+import { Badge, Card } from "@/components/ui";
+import { CreateStaffForm } from "@/components/portal/forms";
 import type { Role } from "@prisma/client";
 
 export const metadata: Metadata = {
@@ -173,6 +174,22 @@ export default async function RolesPage() {
           );
         })}
       </div>
+
+      {viewer.role === "SUPER_ADMIN" || viewer.role === "AGID_ADMIN" ? (
+        <Card>
+          <h2 className="text-[15px] font-bold text-navy-900">
+            Create a staff account
+          </h2>
+          <p className="mt-1.5 max-w-[720px] text-[12.5px] leading-[1.75] text-ink-600">
+            Create the account here and hand over the password privately. The
+            new staff member signs in on the next visit and can change their
+            password from Settings.
+          </p>
+          <div className="mt-5 max-w-[520px] border-t border-line pt-5">
+            <CreateStaffForm />
+          </div>
+        </Card>
+      ) : null}
 
       <section className="rise rounded-xl border border-line bg-navy-50/50 p-5">
         <h2 className="text-[15px] font-bold text-navy-900">

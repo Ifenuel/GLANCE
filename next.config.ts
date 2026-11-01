@@ -27,6 +27,13 @@ const nextConfig: NextConfig = {
     agentUpgrade: "security",
     staticGenerationMaxConcurrency: 2,
     staticGenerationMinPagesPerWorker: 25,
+    // The portal (app) segment is an authenticated gate that deliberately
+    // blocks on the session read every navigation (see its layout). Skip the
+    // implicit per-page "uncached data" validation for these routes; pages
+    // that explicitly export `instant` are still validated.
+    instantInsights: {
+      validationLevel: "manual-warning",
+    },
   },
   // Extra dev-server origin (hostname only, no scheme or port). Set it per
   // process so tunnelled/preview hostnames never need to be committed:

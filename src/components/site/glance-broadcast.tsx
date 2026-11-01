@@ -22,7 +22,7 @@ export type BroadcastStats = {
   states: number;
 };
 
-const DURATION = 40;
+const DURATION = 42.2;
 
 const SCENES = [
   { id: "signal", from: 0, to: 5.4 },
@@ -31,7 +31,9 @@ const SCENES = [
   { id: "work", from: 18.6, to: 26.4 },
   { id: "numbers", from: 26.4, to: 33.4 },
   { id: "footprint", from: 33.4, to: 38.6 },
-  { id: "outro", from: 38.6, to: 40 },
+  // The outro window runs past 40: the closing line needs room to land
+  // before the film ends, or the narration gets cut mid-sentence.
+  { id: "outro", from: 38.6, to: 42.2 },
 ] as const;
 
 type SceneId = (typeof SCENES)[number]["id"];
@@ -91,7 +93,7 @@ function ensureAudioCtx(): AudioContext | null {
   }
 }
 
-function startAmbient() {
+function startAmbient(filmTime = 0) {
   const ctx = ensureAudioCtx();
   if (!ctx || padRunning) return;
   master ??= ctx.createGain();
@@ -142,7 +144,10 @@ function startAmbient() {
   // stale padRunning flag.
   padVoices = [oscA, oscB, oscC, trem];
   padRunning = true;
-  startAnthem();
+  // The anthem no longer starts on its own clock: the player passes the
+  // film's current second into the first call, so the melody is anchored to
+  // the picture no matter when sound comes on.
+  scheduleAnthem(filmTime);
 }
 
 function duckAmbient(ducked: boolean) {
@@ -236,11 +241,17 @@ const ANTHEM_LEVEL = 0.14; // audible behind the narration, never over it
 const ANTHEM_DUCKED_LEVEL = 0.05; // while narration plays, the anthem backs off
 
 let anthemGain: GainNode | null = null;
-let anthemRunning = false;
+/** Notes scheduled but not yet sounded, so a re-sync or pause can cancel
+ *  exactly the future notes without touching the one playing now. */
+const anthemVoices: Array<{ voice: OscillatorNode; octave: OscillatorNode }> = [];
 
-function anthemBell(frequency: number, at: number, beats: number) {
+function anthemBell(
+  frequency: number,
+  at: number,
+  beats: number,
+): { voice: OscillatorNode; octave: OscillatorNode } | null {
   const ctx = audioCtx;
-  if (!ctx || !anthemGain) return;
+  if (!ctx || !anthemGain) return null;
   const dur = beats * ANTHEM_BEAT;
   const voice = ctx.createOscillator();
   voice.type = "sine";
@@ -263,31 +274,84 @@ function anthemBell(frequency: number, at: number, beats: number) {
   octave.start(at);
   voice.stop(at + dur + 0.1);
   octave.stop(at + dur + 0.1);
+  // Track every scheduled pair so stopAnthem can also kill notes that were
+  // scheduled but have not sounded yet (pause and seeking rely on this).
+  return { voice, octave };
 }
 
-function startAnthem() {
+/** Where the anthem's first note lands on the FILM's clock: half a second
+ *  in, while the pad rises. The verse then runs about 39.5s and resolves on
+ *  the tonic just as the 40-second film ends — whatever second the sound
+ *  was switched on, the melody stays phase-locked to the picture. */
+const ANTHEM_FILM_T0 = 0.5;
+
+/** Schedule (or re-schedule) the anthem against the film's timeline. Called
+ *  with the film's current second: notes that would already be over are
+ *  skipped, future notes land at ctxNow + (filmTime - current). This is what
+ *  keeps the laptop and the phone hearing the same thing at the same cut —
+ *  and previously, when sound was unlocked mid-film (exactly the mobile
+ *  path, and any late sound-unlock on desktop) the melody instead started
+ *  from its beginning at that instant and drifted half a film away from the
+ *  narration, or never sounded at all when the AudioContext was still
+ *  suspended at schedule time. */
+function scheduleAnthem(filmTime: number) {
   const ctx = ensureAudioCtx();
-  if (!ctx || !master || anthemRunning) return;
-  anthemRunning = true;
-  anthemGain ??= ctx.createGain();
-  // The anthem speaks straight to the speakers, deliberately soft so the
-  // narration always carries over it, but loud enough to actually be heard.
-  anthemGain.gain.value = ANTHEM_LEVEL;
-  anthemGain.connect(ctx.destination);
-  // The whole verse is scheduled against one start point, so no timer can
-  // bend the rhythm: each note lands exactly on its beat, and drifting
-  // setTimeout chains — which also broke replays by never resetting the
-  // melody position — are gone entirely.
-  const t0 = ctx.currentTime + 0.5; // one beat of breath after the pad rises
-  // Each note's gap is measured from the PREVIOUS note's onset (that is how
-  // the transcription was taken), so the accumulation belongs BEFORE the
-  // note it positions — scheduling first and advancing afterwards collapsed
-  // every phrase into the first beat.
-  let at = t0;
-  for (let i = 0; i < ANTHEM_MELODY.length; i++) {
-    const note = ANTHEM_MELODY[i];
-    if (i > 0) at += note.gap * ANTHEM_BEAT;
-    anthemBell(note.f, at, note.len);
+  if (!ctx) return;
+  anthemGain ??= (() => {
+    const gain = ctx.createGain();
+    gain.gain.value = ANTHEM_LEVEL;
+    gain.connect(ctx.destination);
+    return gain;
+  })();
+
+  // Cancel every note scheduled for the future so seeking or replaying can
+  // never leave a stale melody playing underneath the new arrangement.
+  for (const node of anthemVoices.splice(0)) {
+    try {
+      node.voice.stop();
+      node.octave.stop();
+    } catch {
+      // Already stopped; nothing to clean up.
+    }
+  }
+
+  const ctxNow = ctx.currentTime;
+  let onset = ANTHEM_FILM_T0;
+  for (const note of ANTHEM_MELODY) {
+    // Onset first, then advance: gap is the beats until the NEXT note.
+    if (onset >= filmTime - 0.05) {
+      const node = anthemBell(note.f, ctxNow + (onset - filmTime), note.len);
+      if (node) anthemVoices.push(node);
+    }
+    onset += note.gap * ANTHEM_BEAT;
+  }
+}
+
+/** Make sure the AudioContext is actually running before scheduling: a
+ *  suspended context's clock does not advance, so notes scheduled against
+ *  its frozen currentTime would all pile onto the resume instant instead of
+ *  keeping their real-time offsets. Returns the context once running. */
+function ensureAudioRunning(): Promise<AudioContext | null> {
+  const ctx = ensureAudioCtx();
+  if (!ctx) return Promise.resolve(null);
+  if (ctx.state !== "running") {
+    return ctx.resume().then(() => ctx, () => ctx);
+  }
+  return Promise.resolve(ctx);
+}
+
+/** Stop every anthem note that has not sounded yet, keeping whatever is
+ *  sounding: used when the film pauses or the viewer scrubs — without it,
+ *  notes scheduled for the rest of the verse would keep streaming out over
+ *  a paused picture. */
+function cancelAnthemFuture() {
+  for (const node of anthemVoices.splice(0)) {
+    try {
+      node.voice.stop();
+      node.octave.stop();
+    } catch {
+      // Already stopped; nothing to clean up.
+    }
   }
 }
 
@@ -308,7 +372,16 @@ function duckScore(ducked: boolean) {
 }
 
 function stopAnthem() {
-  anthemRunning = false;
+  // Cancel every note that has not sounded yet, then close the bed with a
+  // short fade so a note mid-swell does not click off.
+  for (const node of anthemVoices.splice(0)) {
+    try {
+      node.voice.stop();
+      node.octave.stop();
+    } catch {
+      // Already stopped; nothing to clean up.
+    }
+  }
   if (anthemGain && audioCtx) {
     const node = anthemGain;
     node.gain.cancelScheduledValues(audioCtx.currentTime);
@@ -340,20 +413,70 @@ function softTick() {
 }
 
 /**
+ * The narrator's saved tuning, shared with the portal's Settings page.
+ * Applies to both the studio voiceover (speed and volume on the audio
+ * file) and, while that file is unavailable, the browser's fallback voice
+ * (accent, pitch, speed and volume).
+ */
+type VoicePrefs = {
+  /** A specific system voice for the TTS fallback, by voiceURI. */
+  voiceURI: string | null;
+  pitch: number;
+  rate: number;
+  volume: number;
+};
+
+export type { VoicePrefs };
+
+const VOICE_PREFS_KEY = "glance:broadcast-voice";
+const VOICE_PREFS_DEFAULT: VoicePrefs = { voiceURI: null, pitch: 0.94, rate: 1, volume: 0.92 };
+
+export function loadVoicePrefs(): VoicePrefs {
+  if (typeof window === "undefined") return VOICE_PREFS_DEFAULT;
+  try {
+    const raw = window.localStorage.getItem(VOICE_PREFS_KEY);
+    if (!raw) return VOICE_PREFS_DEFAULT;
+    const parsed = JSON.parse(raw) as Partial<VoicePrefs>;
+    const clamp = (v: unknown, lo: number, hi: number, fallback: number) =>
+      typeof v === "number" && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : fallback;
+    return {
+      voiceURI: typeof parsed.voiceURI === "string" && parsed.voiceURI ? parsed.voiceURI : null,
+      pitch: clamp(parsed.pitch, 0.5, 1.5, VOICE_PREFS_DEFAULT.pitch),
+      rate: clamp(parsed.rate, 0.75, 1.25, VOICE_PREFS_DEFAULT.rate),
+      volume: clamp(parsed.volume, 0, 1, VOICE_PREFS_DEFAULT.volume),
+    };
+  } catch {
+    return VOICE_PREFS_DEFAULT;
+  }
+}
+
+export function saveVoicePrefs(prefs: VoicePrefs) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(VOICE_PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    // Storage can throw in private modes; the tuning just stays for the session.
+  }
+}
+
+/**
  * Voice selection for a Nigerian-English narrator — clear standard English,
  * never pidgin. Browsers expose different voices per machine, so the match
  * runs from the specific to the general: an en-NG voice if the OS has one,
  * then other African/Nigerian-adjacent English variants, then RP (en-gb,
  * closest cadence), then any English. Voice names are matched too because
- * Windows labels its local voices by name, not always by lang.
+ * Windows labels its local voices by name, not always by lang. A voice the
+ * owner picked in portal Settings always wins over the automatic match.
  */
 function pickVoice(): SpeechSynthesisVoice | null {
   if (typeof window === "undefined" || !window.speechSynthesis) return null;
   const voices = window.speechSynthesis.getVoices();
   if (voices.length === 0) return null;
+  const chosen = loadVoicePrefs().voiceURI;
   const lang = (v: SpeechSynthesisVoice) => v.lang.toLowerCase().replace("_", "-");
   const name = (v: SpeechSynthesisVoice) => v.name.toLowerCase();
   return (
+    (chosen ? voices.find((v) => v.voiceURI === chosen) : undefined) ??
     voices.find((v) => lang(v).startsWith("en-ng")) ??
     voices.find((v) => name(v).includes("nigeria")) ??
     voices.find((v) =>
@@ -374,13 +497,14 @@ function speak(line: string) {
   window.speechSynthesis.cancel();
   const speech = window.setTimeout(() => {
     const utter = new SpeechSynthesisUtterance(line);
+    const prefs = loadVoicePrefs();
     const voice = pickVoice();
     if (voice) utter.voice = voice;
-    utter.rate = 1;
+    utter.rate = prefs.rate;
     // A touch lower than the default gives the line the darker timbre and
     // even cadence of a Nigerian newsreader without changing the words.
-    utter.pitch = 0.94;
-    utter.volume = 0.92;
+    utter.pitch = prefs.pitch;
+    utter.volume = prefs.volume;
     window.speechSynthesis.speak(utter);
   }, 60);
   speakTimers.push(speech);
@@ -394,6 +518,97 @@ function stopSpeaking() {
     window.speechSynthesis.cancel();
     for (const timer of speakTimers.splice(0)) window.clearTimeout(timer);
   }
+}
+
+/* ── Studio voiceover ─────────────────────────────────────────────
+ * Every scene has a pre-rendered narration clip in /broadcast, so the
+ * voice a visitor hears is identical on every device — a browser that
+ * improvises narrator voices per OS is exactly what produced the
+ * laptop-vs-mobile mismatch. speak() below remains as the fallback for
+ * the rare client that cannot load the clips (offline, blocked, 404).
+ * Clips only exist per scene, so playback aligns at scene cuts: entering
+ * a scene plays its clip from film-time minus the scene's start.
+ */
+
+let vo: HTMLAudioElement | null = null;
+let voAvailable = true;
+let voLoadedScene: SceneId | null = null;
+let voAllowed = false; // mirrors "sound on" — clips never play while muted
+
+function getVo(): HTMLAudioElement | null {
+  if (typeof window === "undefined") return null;
+  if (!vo) {
+    vo = new Audio();
+    vo.preload = "auto";
+    vo.addEventListener("error", () => {
+      // Any load failure (missing paint of a clip, no network, codec) is
+      // permanent for the session: fall through to the browser voice.
+      voAvailable = false;
+    });
+  }
+  return vo;
+}
+
+function sceneStartOf(id: SceneId): number {
+  return SCENES.find((scene) => scene.id === id)?.from ?? 0;
+}/** Play a clip at the film's current second; returns true when the clip
+ *  takes over the line (false only when unavailable) so the caller
+ *  knows whether the browser voice must speak instead. */
+function playVoiceover(sceneId: SceneId, filmTime: number): boolean {
+  if (!voAllowed || !voAvailable) return false;
+  const el = getVo();
+  if (!el) return false;
+  const offset = filmTime - sceneStartOf(sceneId);
+  if (offset < 0) return false;
+  const prefs = loadVoicePrefs();
+  if (voLoadedScene !== sceneId || el.src === "") {
+    el.src = `/broadcast/${sceneId}.wav`;
+    voLoadedScene = sceneId;
+    el.load();
+  }
+  el.volume = prefs.volume;
+  el.playbackRate = prefs.rate;
+  // Seeking past the end of the clip: the line has already been said, so
+  // the correct continuation is silence, not a re-read.
+  try {
+    if (offset > 0) el.currentTime = Math.max(0, offset);
+  } catch {
+    // Metadata not ready yet — the seek clamps once it loads.
+  }
+  void el.play().catch(() => {
+    // Autoplay policy or IO error; the scene stays visual-only.
+  });
+  return true;
+}
+
+function pauseVoiceover() {
+  if (vo && !vo.paused) vo.pause();
+}
+
+function stopVoiceover() {
+  if (!vo) return;
+  vo.pause();
+  try {
+    vo.currentTime = 0;
+  } catch {
+    // Not loaded; nothing to rewind.
+  }
+}
+
+function setVoAllowed(on: boolean) {
+  voAllowed = on;
+  if (!on) stopVoiceover();
+}
+
+/** The single narration entry point: the studio clip first, the browser
+ *  voice only if the clip could not be played. Whatever spoke the previous
+ *  line must be silenced first so a queued browser line can never talk
+ *  over the clip that replaced it. */
+function narrate(sceneId: SceneId, filmTime: number) {
+  if (!voAllowed) return;
+  stopSpeaking();
+  if (playVoiceover(sceneId, filmTime)) return;
+  speak(NARRATION[sceneId]);
 }
 
 /* ── Shared helpers ───────────────────────────────────────────────
@@ -946,17 +1161,32 @@ export function GlanceBroadcast({
 
   const stopSound = useCallback(() => {
     stopSpeaking();
+    stopVoiceover();
     stopAmbient();
   }, []);
 
-  const setSound = useCallback((on: boolean) => {
-    setSoundOn(on);
-    if (on) {
-      startAmbient();
-    } else {
-      stopSound();
-    }
-  }, [stopSound]);
+  const setSound = useCallback(
+    (on: boolean) => {
+      setSoundOn(on);
+      if (on) {
+        setVoAllowed(true);
+        // Anchor the bed and the voiceover to wherever the picture actually
+        // is right now; when the film is not running yet everything waits at
+        // film time 0.
+        const filmTime =
+          state === "playing" ? (performance.now() - startRef.current) / 1000 : 0;
+        startAmbient(Math.max(0, filmTime));
+        if (state === "playing" && filmTime < DURATION) {
+          const sceneId = sceneAt(Math.max(0, filmTime));
+          if (sceneId) narrate(sceneId, filmTime);
+        }
+      } else {
+        setVoAllowed(false);
+        stopSound();
+      }
+    },
+    [stopSound, state],
+  );
 
   const play = useCallback(() => {
     startRef.current = performance.now() - t * 1000;
@@ -964,13 +1194,24 @@ export function GlanceBroadcast({
     spokenRef.current = null;
     startLoop();
     duckScore(false);
-    if (soundOn) startAmbient();
+    if (soundOn) {
+      setVoAllowed(true);
+      startAmbient(t);
+      // Resume the context before scheduling (mobile autoplay gate — a
+      // suspended context's clock is frozen, so notes scheduled on it would
+      // all pile onto the unlock instant), then anchor the melody here.
+      void ensureAudioRunning().then((ctx) => {
+        if (ctx) scheduleAnthem(t);
+      });
+    }
   }, [startLoop, t, soundOn]);
 
   const pause = useCallback(() => {
     stopLoop();
     setState("paused");
     stopSpeaking();
+    pauseVoiceover();
+    cancelAnthemFuture();
     duckScore(true);
   }, [stopLoop]);
 
@@ -981,7 +1222,13 @@ export function GlanceBroadcast({
     setState("playing");
     startLoop();
     duckScore(false);
-    if (soundOn) startAmbient();
+    if (soundOn) {
+      setVoAllowed(true);
+      startAmbient(0);
+      void ensureAudioRunning().then((ctx) => {
+        if (ctx) scheduleAnthem(0);
+      });
+    }
   }, [startLoop, soundOn]);
 
   const seek = useCallback(
@@ -991,9 +1238,30 @@ export function GlanceBroadcast({
       startRef.current = performance.now() - nextT * 1000;
       setT(nextT);
       spokenRef.current = null;
+      if (soundOn) {
+        // The melody jumps with the picture: notes from the old position
+        // are cancelled, and the remaining verse re-anchors to the new
+        // second while playing. While paused the cancellation alone keeps
+        // the bed silent until the film runs again.
+        if (state === "playing") {
+          void ensureAudioRunning().then((ctx) => {
+            if (ctx) scheduleAnthem(nextT);
+          });
+          // The voiceover re-anchors the same way: end of an old clip is
+          // cancelled (playVoiceover replaces the source), and the clip the
+          // picture has landed in starts from its offset — or simply no
+          // longer plays if its line is already over.
+          const sceneId = sceneAt(nextT);
+          if (sceneId && nextT < DURATION) narrate(sceneId, nextT);
+          else stopVoiceover();
+        } else {
+          cancelAnthemFuture();
+          stopVoiceover();
+        }
+      }
       if (state === "done") setState("paused");
     },
-    [state],
+    [state, soundOn],
   );
 
   useEffect(() => {
@@ -1001,14 +1269,19 @@ export function GlanceBroadcast({
   }, [stopLoop]);
 
   /* Narration + scene tick: whenever the active scene changes while
-     playing — including at the very first frame — speak its line. */
+     playing — including at the very first frame — play its line: the
+     studio clip when it loads, the browser voice as the fallback. */
   useEffect(() => {
     if (state !== "playing" || !activeScene) return;
     if (spokenRef.current === activeScene) return;
     spokenRef.current = activeScene;
     if (!soundOn) return;
-    stopSpeaking();
-    speak(NARRATION[activeScene]);
+    // Skip the very first frame: the opening beat of the opening clip is
+    // a deliberate silence, and speaking it the instant play starts read
+    // as an abrupt pop. The clip naturally begins a beat later instead.
+    const filmTime = (performance.now() - startRef.current) / 1000;
+    if (filmTime < 0.5) return;
+    narrate(activeScene, filmTime);
     softTick();
   }, [activeScene, state, soundOn]);
 
@@ -1042,6 +1315,7 @@ export function GlanceBroadcast({
   useEffect(() => {
     if (state !== "done") return;
     stopSpeaking();
+    stopVoiceover();
     stopAmbient();
   }, [state]);
 
@@ -1054,6 +1328,7 @@ export function GlanceBroadcast({
     () => () => {
       stopLoop();
       stopSpeaking();
+      stopVoiceover();
       stopAmbient();
     },
     [stopLoop],
@@ -1079,7 +1354,7 @@ export function GlanceBroadcast({
       <div
         className="bc-stage relative aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-navy-950 shadow-[0_50px_120px_-40px_rgba(0,0,0,0.9)]"
         role="img"
-        aria-label="GLANCE broadcast: a 40-second motion account of the movement, with optional narration."
+        aria-label="GLANCE broadcast: a motion account of the movement, with optional narration."
       >
         {/* Stage: the active scene crossfades in as its own layer. The
             Settle wrapper remounts per scene (key) and guarantees the
@@ -1166,43 +1441,52 @@ export function GlanceBroadcast({
           </>
         ) : (
           /* Poster / replay overlay (standalone mode only; the intro
-             autoplays, so it lives on the stage). */
-          <Settle className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 overflow-hidden bg-navy-950 px-4 sm:gap-5 sm:px-0">
-            <div className="absolute inset-0 opacity-40">
-              <Image src={audienceClap} alt="" fill sizes="100vw" className="object-cover" />
+             autoplays, so it lives on the stage). The resting frame is a
+             compact play button floating over the film's imagery — a full
+             blanket treatment hid the broadcast underneath and read as a
+             wall of gold, not a video waiting to be watched. */
+          <Settle className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-2.5 overflow-hidden px-4 sm:gap-3.5">
+            <div className="absolute inset-0">
+              <Image src={audienceClap} alt="" fill sizes="100vw" className="object-cover bc-ken-slow" />
             </div>
-            <div className="absolute inset-0 bg-[radial-gradient(90%_90%_at_50%_40%,rgba(3,12,28,0.55),rgba(3,12,28,0.95))]" />
-            <p className="bc-fade-up relative font-bold tracking-[0.3em] text-gold-400 uppercase">
-              {state === "done" ? "Thanks for watching" : "GLANCE presents"}
+            <div className="absolute inset-0 bg-[radial-gradient(90%_90%_at_50%_40%,rgba(3,12,28,0.45),rgba(3,12,28,0.78))]" />
+            <p
+              className="bc-fade-up relative font-bold tracking-[0.3em] text-gold-400 uppercase"
+              style={{ fontSize: "clamp(9.5px, 1.4vw, 13px)" }}
+            >
+              {state === "done" ? "Thanks for watching — watch again" : "GLANCE presents"}
             </p>
             <div className="bc-fade-up relative px-6" style={{ animationDelay: "0.15s" }}>
-              <p className="font-display text-[clamp(28px,5.4vw,58px)] leading-none font-extrabold tracking-[0.02em] text-white">
+              <p className="font-display text-[clamp(17px,3.4vw,34px)] leading-tight font-extrabold tracking-[0.02em] text-white">
                 Look around. Rally. Act.
               </p>
             </div>
-            <p
-              className="bc-fade-up relative hidden max-w-[480px] px-6 text-center text-[clamp(11px,1.6vw,14.5px)] leading-relaxed text-white/70 sm:block"
-              style={{ animationDelay: "0.3s" }}
-            >
-              A short film about the movement — chapters, mentorship and real
-              civic work, told by the people in the room.
-            </p>
-            <button
-              type="button"
-              onClick={() => (state === "done" ? restart() : play())}
-              className="sheen bc-fade-up relative mt-2 inline-flex h-14 shrink-0 items-center gap-3 rounded-full bg-gold-400 px-8 text-[14px] font-bold text-navy-950 shadow-[0_18px_40px_-14px_rgba(251,202,75,0.55)] transition-transform hover:scale-[1.03]"
-              style={{ animationDelay: "0.45s" }}
-            >
+            {/* The play control: a small, breathing chip rather than a
+                full-size emoji plate — on phones a 64px gold disc read as
+                a sticker covering the frame. */}
+            <span className="relative mt-1.5 inline-flex place-items-center">
               <span
                 aria-hidden="true"
-                className="grid h-7 w-7 place-items-center rounded-full bg-navy-950 text-gold-400 transition-transform group-hover:scale-110"
+                className="bc-ping absolute inset-0 rounded-full border border-gold-400/45"
+              />
+              <button
+                type="button"
+                onClick={() => (state === "done" ? restart() : play())}
+                className="sheen bc-fade-up group relative inline-flex h-11 w-11 cursor-pointer place-items-center rounded-full border border-white/40 bg-navy-950/85 text-white shadow-[0_10px_28px_-8px_rgba(3,12,28,0.9)] backdrop-blur-sm transition-all hover:scale-105 hover:border-gold-400/70 hover:bg-navy-950 hover:text-gold-300 focus-visible:ring-4 focus-visible:ring-gold-400/40 focus-visible:outline-none sm:h-13 sm:w-13"
+                style={{ animationDelay: "0.45s" }}
+                aria-label={state === "done" ? "Watch the film again" : "Play the film"}
               >
-                <svg viewBox="0 0 12 12" className="h-3 w-3 translate-x-[1px]" fill="currentColor">
-                  <path d="M2 1.2v9.6L10.5 6z" />
+                <svg viewBox="0 0 14 14" className="h-3.5 w-3.5 translate-x-[2px] fill-current transition-transform group-hover:scale-110 sm:h-4 sm:w-4">
+                  <path d="M3 1.4v11.2L12 7z" />
                 </svg>
-              </span>
-              {state === "done" ? "Watch again" : "Play the film"}
-            </button>
+              </button>
+            </span>
+            <p
+              className="bc-fade-up relative hidden text-[12.5px] font-semibold tracking-[0.16em] text-white/70 uppercase sm:block"
+              style={{ animationDelay: "0.3s" }}
+            >
+              Chapters · mentorship · real civic work
+            </p>
           </Settle>
         )}
 
@@ -1234,11 +1518,9 @@ export function GlanceBroadcast({
         ) : null}
       </div>
 
-      {intro ? null : (
-        <p className="mt-3 text-center text-[11px] font-semibold tracking-[0.16em] text-white/45 uppercase">
-          A GLANCE film · best with sound · tap the frame to pause
-        </p>
-      )}
+      {/* The old “A GLANCE film · best with sound · tap the frame to
+          pause” line is deliberately gone: the sound pill and the pause
+          affordance tell the same story inside the stage itself. */}
     </div>
   );
 

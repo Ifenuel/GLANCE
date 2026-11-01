@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { ButtonLink } from "@/components/button-link";
-import { Parallax } from "@/components/site/motion";
+import { ParallaxImage } from "@/components/site/motion/parallax-image";
 import { Reveal } from "@/components/site/reveal";
 import { Container, Eyebrow } from "@/components/ui";
 import { leadingAt27 } from "@/lib/glance";
@@ -14,18 +14,20 @@ export function LeadingAt27() {
       />
       <Container className="relative grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-center">
         <Reveal className="flex justify-center lg:justify-start">
-          {/* The book floats against scroll — the drift becomes scroll-driven
-              so the object reads as part of the film, not a floating prop. */}
-          <Parallax range={9} mobileRange={5} scaleTo={1}>
-            <Image
-              src="/media/leading-at-27-book.webp"
-              alt="Leading at 27 by Seyi Adisa"
-              width={1526}
-              height={1241}
-              sizes="(min-width: 1024px) 420px, (min-width: 640px) 70vw, 100vw"
-              className="h-auto w-full max-w-[420px] cursor-default rounded-2xl shadow-[0_32px_70px_-24px_rgba(0,0,0,0.8)]"
-            />
-          </Parallax>
+          {/* The book floats against the scroll — a shelf surprise rather
+              than a second motion loop, so it reads calm next to the drift. */}
+          <ParallaxImage speed={6}>
+            <div className="relative flex justify-center lg:justify-start">
+              <Image
+                src="/media/leading-at-27-book.webp"
+                alt="Leading at 27 by Seyi Adisa"
+                width={1526}
+                height={1241}
+                sizes="(min-width: 1024px) 420px, (min-width: 640px) 70vw, 100vw"
+                className="h-auto w-full max-w-[420px] cursor-default rounded-2xl shadow-[0_32px_70px_-24px_rgba(0,0,0,0.8)]"
+              />
+            </div>
+          </ParallaxImage>
         </Reveal>
 
         <Reveal delay={110}>

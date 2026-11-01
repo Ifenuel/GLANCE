@@ -8,7 +8,7 @@ import {
 } from "@/server/actions/admin";
 import { ActionMenu } from "@/components/portal/action-menu";
 import { GlanceMark } from "@/components/glance-logo";
-import { Container, SectionHeading } from "@/components/ui";
+import { SectionHeading } from "@/components/ui";
 import { formatDate, genderLabel } from "@/lib/format";
 
 export const metadata: Metadata = {

@@ -3,6 +3,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
 import { db } from "@/server/db";
+import type { Role } from "@prisma/client";
 import {
   createSession,
   destroySession,
@@ -209,7 +210,7 @@ export async function activateAccountAction(
           data: {
             passwordHash,
             name: invitation.email.split("@")[0]!,
-            role: invitation.role as any,
+            role: invitation.role as Role,
             status: "ACTIVE",
             emailVerifiedAt: new Date(),
             chapterId: invitation.chapterId,
@@ -393,9 +394,14 @@ export async function changePasswordAction(
   const user = await requireUser();
   const ip = await requestIp();
 
+  // The profile form posts `newPassword`; other flows post `password` plus a
+  // `confirmPassword` check — accept either shape so every caller validates.
   const current = String(formData.get("currentPassword") ?? "");
-  const next = String(formData.get("password") ?? "");
-  const confirm = String(formData.get("confirmPassword") ?? "");
+  const next =
+    String(formData.get("newPassword") ?? formData.get("password") ?? "");
+  const confirm = String(
+    formData.get("confirmPassword") ?? formData.get("newPassword") ?? "",
+  ) || next;
 
   if (next.length < 10 || next !== confirm) {
     return {

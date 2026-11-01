@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { CountUp } from "@/components/count-up";
 import { ArrowRight, BuildingIcon, ChapterIcon, MemberIcon, PinIcon } from "@/components/icons";
-import { MaskReveal, ScrubLine } from "@/components/site/motion";
 import { Reveal } from "@/components/site/reveal";
 import { Container, VerifiedNote } from "@/components/ui";
 import { platformSnapshot } from "@/server/content";
@@ -45,9 +44,7 @@ export async function AtAGlance() {
   return (
     <section aria-label="GLANCE at a glance" className="bg-white">
       <Container className="py-12 lg:py-16">
-        {/* The scoreboard unveils through a mask, like a curtain rising on
-            the movement's figures. */}
-        <MaskReveal from="top">
+        <Reveal>
           <div className="overflow-hidden rounded-2xl bg-navy-950 shadow-[0_40px_80px_-50px_rgba(5,36,94,0.7)]">
             {/* Kicker row */}
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-8">
@@ -114,12 +111,7 @@ export async function AtAGlance() {
               </Reveal>
             </div>
           </div>
-        </MaskReveal>
-
-        {/* The gold seam threads the scoreboard into what follows. */}
-        <div className="mt-8">
-          <ScrubLine className="opacity-60" />
-        </div>
+        </Reveal>
 
         <div className="mt-5 text-[12px]">
           <VerifiedNote>

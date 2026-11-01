@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireRole } from "@/server/auth";
 import { db } from "@/server/db";
-import { Container, Card } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { PostForm } from "@/components/portal/forms/post-form";
 import {

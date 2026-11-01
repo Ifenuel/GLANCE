@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import QRCode from "qrcode";
 import { toPng } from "html-to-image";
-import emblem from "@/assets/glance-emblem.png";
 import { GlanceLogo } from "@/components/glance-logo";
 
 export type IdCardMember = {

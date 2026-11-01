@@ -50,6 +50,7 @@ const ACTION_LABELS: Record<string, string> = {
   "member.update": "Updated a member record",
   "member.avatar_update": "Updated a profile photo",
   "user.create_agid_admin": "Created a staff account",
+  "user.create_comm_manager": "Created a communications account",
   "user.profile_completed": "Completed their profile",
   "report.submit": "Submitted an activity report",
   "report.review": "Reviewed an activity report",

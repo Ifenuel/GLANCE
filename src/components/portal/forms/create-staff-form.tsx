@@ -1,12 +1,17 @@
 "use client";
 
 import { useActionState } from "react";
-import { Field, FormMessage, SubmitButton } from "@/components/forms/form-parts";
-import { createAgidAdminAction } from "@/server/actions/admin";
+import { Field, FormMessage, Select, SubmitButton } from "@/components/forms/form-parts";
+import { createStaffAccountAction } from "@/server/actions/admin";
 import { idleFormState } from "@/server/validation";
 
-export function CreateAgidAdminForm() {
-  const [state, formAction] = useActionState(createAgidAdminAction, idleFormState);
+const roleOptions = [
+  { value: "COMM_MANAGER", label: "Communications & media" },
+  { value: "AGID_ADMIN", label: "GLANCE team (full network administrator)" },
+];
+
+export function CreateStaffForm() {
+  const [state, formAction] = useActionState(createStaffAccountAction, idleFormState);
 
   return (
     <form action={formAction} className="space-y-5">
@@ -59,6 +64,16 @@ export function CreateAgidAdminForm() {
       </Field>
 
       <Field
+        label="Staff role"
+        htmlFor="role"
+        required
+        error={state.errors?.role}
+        hint="Communications runs events, media and website content. GLANCE team runs the entire portal."
+      >
+        <Select id="role" name="role" options={roleOptions} defaultValue="COMM_MANAGER" />
+      </Field>
+
+      <Field
         label="Password"
         htmlFor="password"
         required
@@ -75,45 +90,14 @@ export function CreateAgidAdminForm() {
         />
       </Field>
 
-      <Field
-        label="Confirm password"
-        htmlFor="passwordConfirm"
-        required
-        error={state.errors?.passwordConfirm}
-      >
-        <input
-          id="passwordConfirm"
-          name="passwordConfirm"
-          type="password"
-          autoComplete="new-password"
-          required
-          placeholder="Repeat password"
-          className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[14px] text-navy-900 placeholder:text-ink-400 focus:border-navy-500 focus:ring-2 focus:ring-navy-500/15 focus:outline-none"
-        />
-      </Field>
-
-      <Field
-        label="Phone number (optional)"
-        htmlFor="phone"
-        error={state.errors?.phone}
-      >
-        <input
-          id="phone"
-          name="phone"
-          type="tel"
-          placeholder="080 1234 5678"
-          className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[14px] text-navy-900 placeholder:text-ink-400 focus:border-navy-500 focus:ring-2 focus:ring-navy-500/15 focus:outline-none"
-        />
-      </Field>
-
-      <SubmitButton pendingLabel="Creating administrator account…">
-        Create network administrator
+      <SubmitButton pendingLabel="Creating staff account…">
+        Create staff account
       </SubmitButton>
 
       <p className="text-[11.5px] text-ink-400">
-        Network administrators manage chapters, member records, applications,
-        invitations and audit logs for the entire network. Use this only when
-        needed.
+        Share the password over a private channel and ask the new staff member to
+        change it from Settings on first sign in. Chapter coordinators are
+        created differently: send an activation code from the Invitations page.
       </p>
     </form>
   );

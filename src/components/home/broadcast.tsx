@@ -28,13 +28,14 @@ export async function GLANCEBroadcastSection({ stats }: { stats?: BroadcastStats
           <h2 className="mt-2 text-[28px] font-extrabold tracking-tight text-white sm:text-[36px]">
             Look around. Rally. Act.
           </h2>
-          <p className="mt-3 text-[14px] leading-[1.8] text-white/65">
-            What GLANCE is, what it builds and where it stands — cut as a
-            motion film straight from the pages of this website.
-          </p>
         </div>
 
-        <GlanceBroadcast stats={figures} />
+        {/* Full-bleed on phones: the film is a widescreen object, and on
+            a 390px viewport the container's side padding took a fifth of
+            its width. Edge to edge it reads like a video player. */}
+        <div className="-mx-5 sm:-mx-6 lg:mx-0">
+          <GlanceBroadcast stats={figures} />
+        </div>
       </Container>
     </section>
   );

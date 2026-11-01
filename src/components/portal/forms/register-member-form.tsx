@@ -259,7 +259,7 @@ export function RegisterMemberForm() {
           <p>
             I consent to GLANCE storing and processing the personal
             information in this record for membership administration. I
-            understand that GLANCE and my chapter's coordinators can see my
+            understand that GLANCE and my chapter&apos;s coordinators can see my
             record, that my
             details are not published publicly, and that I can request
             correction or deletion at any time.

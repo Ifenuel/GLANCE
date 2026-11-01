@@ -38,18 +38,24 @@ export async function updateAccountAction(
     user.role === "SUPER_ADMIN" || user.role === "AGID_ADMIN" || user.role === "COMM_MANAGER" || user.role === "CHAPTER_ADMIN";
   const completing = staffRole && !user.profileCompletedAt;
 
+  // Only a first-time completion run demands the full set; the everyday
+  // "account details" save only carries the fields the form actually shows
+  // (name, email, phone, gender), and leaves department/level/position as
+  // stored. Requiring hidden fields here used to block every save forever.
   const errors: Record<string, string[]> = {};
-  if (!data.phone) errors.phone = ["A phone number is required"];
-  if (!data.gender) errors.gender = ["Select your gender"];
-  if (!data.department) errors.department = ["Enter your department or field"];
-  if (!data.academicLevel) errors.academicLevel = ["Select your academic level"];
-  if (!data.position) errors.position = ["Enter your position"];
-  if (Object.keys(errors).length > 0) {
-    return {
-      status: "error",
-      message: "Complete every field so your account can be activated.",
-      errors,
-    };
+  if (completing) {
+    if (!data.phone) errors.phone = ["A phone number is required"];
+    if (!data.gender) errors.gender = ["Select your gender"];
+    if (!data.department) errors.department = ["Enter your department or field"];
+    if (!data.academicLevel) errors.academicLevel = ["Select your academic level"];
+    if (!data.position) errors.position = ["Enter your position"];
+    if (Object.keys(errors).length > 0) {
+      return {
+        status: "error",
+        message: "Complete every field so your account can be activated.",
+        errors,
+      };
+    }
   }
 
   const emailChanged = data.email !== user.email.toLowerCase();
@@ -73,10 +79,10 @@ export async function updateAccountAction(
       name: data.name,
       email: data.email,
       phone: data.phone || null,
-      gender: data.gender || "PREFER_NOT_TO_SAY",
-      department: data.department || null,
-      academicLevel: data.academicLevel || null,
-      position: data.position || null,
+      gender: data.gender || user.gender || "PREFER_NOT_TO_SAY",
+      department: data.department || user.department || null,
+      academicLevel: data.academicLevel || user.academicLevel || null,
+      position: data.position || user.position || null,
       profileCompletedAt: user.profileCompletedAt ?? new Date(),
     },
   });

@@ -24,10 +24,11 @@ export default async function MembershipApplicationReviewPage({
 }) {
   await requireRole(["SUPER_ADMIN", "AGID_ADMIN"]);
   const { id } = await params;
-  const application = await db.joinApplication.findUnique({ where: { id } });
+  const [{ application }, entries] = await Promise.all([
+    db.joinApplication.findUnique({ where: { id } }).then((a) => (a ? { application: a } : {})),
+    auditEntry({ limit: 6 }),
+  ]);
   if (!application) notFound();
-
-  const entries = await auditEntry({ limit: 6 });
 
   return (
     <Container>
@@ -56,7 +57,7 @@ export default async function MembershipApplicationReviewPage({
               <GLANCE className="h-8 w-8" />
             </div>
             <div>
-              <p className="text-sm font-bold text-navy-900">{application.fullName}</p>
+              <p className="text-sm font-bold text-navy-900">            {application.fullName}</p>
               <p className="text-[13.5px] text-ink-500">
                 {application.institution} · {application.email}
               </p>
@@ -75,27 +76,27 @@ export default async function MembershipApplicationReviewPage({
         </div>
 
         <dl className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl bg-white/5 p-4">
+          <div className="rounded-xl bg-navy-50 p-4">
             <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Contact</dt>
-            <dd className="text-[13px] font-semibold text-white">
+            <dd className="text-[13px] font-semibold text-navy-900">
               {application.email} · {application.phone}
             </dd>
           </div>
-          <div className="rounded-xl bg-white/5 p-4">
+          <div className="rounded-xl bg-navy-50 p-4">
             <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Category</dt>
-            <dd className="text-[13px] font-semibold text-white">{application.membershipCategory}</dd>
+            <dd className="text-[13px] font-semibold text-navy-900">{application.membershipCategory}</dd>
           </div>
-          <div className="rounded-xl bg-white/5 p-4">
+          <div className="rounded-xl bg-navy-50 p-4">
             <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Department</dt>
-            <dd className="text-[13px] font-semibold text-white">{application.department ?? "Not set"}</dd>
+            <dd className="text-[13px] font-semibold text-navy-900">{application.department ?? "Not set"}</dd>
           </div>
-          <div className="rounded-xl bg-white/5 p-4">
+          <div className="rounded-xl bg-navy-50 p-4">
             <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Level</dt>
-            <dd className="text-[13px] font-semibold text-white">{application.academicLevel ?? "Not set"}</dd>
+            <dd className="text-[13px] font-semibold text-navy-900">{application.academicLevel ?? "Not set"}</dd>
           </div>
-          <div className="rounded-xl bg-white/5 p-4 sm:col-span-2">
+          <div className="rounded-xl bg-navy-50 p-4 sm:col-span-2">
             <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Motivation</dt>
-            <dd className="text-[13.5px] leading-6 text-ink-200">{application.motivation}</dd>
+            <dd className="text-[13.5px] leading-6 text-ink-500">{application.motivation}</dd>
           </div>
         </dl>
       </Card>

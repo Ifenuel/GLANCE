@@ -6,7 +6,6 @@ import chapterLecture from "@/assets/chapter-lecture.jpg";
 import { ButtonLink } from "@/components/button-link";
 import { ArrowRight } from "@/components/icons";
 import { Reveal } from "@/components/site/reveal";
-import { StaggerGroup } from "@/components/site/motion";
 import { TiltCard } from "@/components/site/tilt-card";
 import { Container, EmptyState, SectionHeading } from "@/components/ui";
 import { formatDate } from "@/lib/format";
@@ -38,7 +37,7 @@ export async function InsightsTeaser() {
             </ButtonLink>
           </Reveal>
 
-          <StaggerGroup className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {posts.length === 0 ? (
               <div className="sm:col-span-2 lg:col-span-3">
                 <EmptyState
@@ -53,7 +52,8 @@ export async function InsightsTeaser() {
               </div>
             ) : (
               posts.map((post, index) => (
-                <TiltCard key={post.id} className="group h-full">
+                <Reveal key={post.id} delay={index * 80}>
+                  <TiltCard className="group h-full">
                     <article className="relative flex h-full flex-col overflow-hidden rounded-xl border border-line bg-white">
                       <div className="relative h-[150px] w-full overflow-hidden">
                         <Image
@@ -88,9 +88,10 @@ export async function InsightsTeaser() {
                     </div>
                     </article>
                   </TiltCard>
+                </Reveal>
               ))
             )}
-          </StaggerGroup>
+          </div>
         </div>
       </Container>
     </section>

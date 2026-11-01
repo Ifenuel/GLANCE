@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { updateAccountAction } from "@/server/actions/member";
-import { changePasswordAction } from "@/server/actions/auth";
+import { idleFormState } from "@/server/validation";
 
 const STEPS = [
   { id: 1, label: "Change Password" },
@@ -101,10 +100,10 @@ export function FirstLoginOnboarding({
         formData.append("academicLevel", personalData.academicLevel);
         formData.append("completeProfile", "on");
 
-        await updateAccountAction(null as any, formData);
+        await updateAccountAction(idleFormState, formData);
         router.push("/portal/dashboard");
-      } catch (err: any) {
-        setError(err.message || "Failed to complete onboarding.");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to complete onboarding.");
         setLoading(false);
       }
     }

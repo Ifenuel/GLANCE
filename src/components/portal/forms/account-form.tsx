@@ -110,18 +110,19 @@ export function AccountForm({
         </Field>
       </div>
 
-      {required ? (
-        <div className="grid gap-5 sm:grid-cols-2">
+      {/* Shown at all times so an account can be corrected later; mandatory
+          only during first-time completion. */}
+      <div className="grid gap-5 sm:grid-cols-2">
           <Field
             label="Department or field"
             htmlFor="account-department"
-            required
+            required={required}
             error={state.errors?.department}
           >
             <input
               id="account-department"
               name="department"
-              required
+              required={required}
               defaultValue={user.department ?? ""}
               placeholder="e.g. Political Science"
               className={input}
@@ -130,13 +131,13 @@ export function AccountForm({
           <Field
             label="Academic level"
             htmlFor="account-level"
-            required
+            required={required}
             error={state.errors?.academicLevel}
           >
             <select
               id="account-level"
               name="academicLevel"
-              required
+              required={required}
               defaultValue={user.academicLevel ?? ""}
               className={input}
             >
@@ -159,21 +160,20 @@ export function AccountForm({
           <Field
             label="Position"
             htmlFor="account-position"
-            required
+            required={required}
             hint="Your role in GLANCE, for example coordinator or communications lead. Type “Not applicable” if none."
             error={state.errors?.position}
           >
             <input
               id="account-position"
               name="position"
-              required
+              required={required}
               defaultValue={user.position ?? ""}
               placeholder="e.g. Chapter Administrator"
               className={input}
             />
           </Field>
-        </div>
-      ) : null}
+      </div>
 
       <div className="flex gap-3">
         <SubmitButton pendingLabel="Saving…">

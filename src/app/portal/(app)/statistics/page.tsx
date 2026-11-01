@@ -5,7 +5,6 @@ import { db } from "@/server/db";
 import { getNationalFootprint } from "@/server/footprint";
 import { NigeriaInteractiveMap } from "@/components/portal/nigeria-map";
 import { Card, SectionHeading } from "@/components/ui";
-import { GrowthLineChart } from "@/components/portal/dashboard-charts";
 import { formatNumber } from "@/lib/format";
 
 export const metadata: Metadata = {

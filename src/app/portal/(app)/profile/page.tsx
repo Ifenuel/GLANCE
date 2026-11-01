@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/server/auth";
 import { auditEntry, auditActionLabel } from "@/server/audit";
-import { Card, SectionHeading } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { GlanceMark } from "@/components/glance-logo";
-import { formatDate, formatDateTime, genderLabel } from "@/lib/format";
+import { academicLevelLabel, formatDate, formatDateTime, genderLabel } from "@/lib/format";
 import { AccountForm, AvatarUploader } from "@/components/portal/forms";
 import { ChangePasswordForm } from "@/components/portal/forms/change-password-form";
 
@@ -44,7 +44,7 @@ export default async function ProfilePage() {
     ["Phone", user.phone ?? "Not set"],
     ["Gender", genderLabel(user.gender)],
     ["Department", user.department ?? "Not set"],
-    ["Level", user.academicLevel ?? "Not set"],
+    ["Level", academicLevelLabel(user.academicLevel)],
     ["Position", user.position ?? "Not set"],
     ["Chapter", user.chapter?.name ?? "None"],
   ];

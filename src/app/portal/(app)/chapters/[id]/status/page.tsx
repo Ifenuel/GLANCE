@@ -24,7 +24,10 @@ export default async function ChapterStatusPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const chapter = await db.chapter.findUnique({ where: { id } });
+  // Either the internal id or the human-readable chapter code resolves here.
+  const chapter =
+    (await db.chapter.findUnique({ where: { id } })) ??
+    (await db.chapter.findUnique({ where: { code: id.toUpperCase() } }));
   if (!chapter) notFound();
 
   // Server-side scoping: only GLANCE or this chapter's administrators may view.
@@ -37,7 +40,7 @@ export default async function ChapterStatusPage({
   if (!mayView) notFound();
 
   const memberCount = await db.memberProfile.count({
-    where: { chapterId: id, status: "ACTIVE" },
+    where: { chapterId: chapter.id, status: "ACTIVE" },
   });
 
   const entries = await auditEntry({ limit: 8 });

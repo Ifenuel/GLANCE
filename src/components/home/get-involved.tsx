@@ -8,7 +8,7 @@ import {
   OpportunityIcon,
   PartnerIcon,
 } from "@/components/icons";
-import { Parallax } from "@/components/site/motion";
+import { ParallaxImage } from "@/components/site/motion/parallax-image";
 import { Reveal } from "@/components/site/reveal";
 import { Container } from "@/components/ui";
 
@@ -39,19 +39,17 @@ export function GetInvolved() {
   return (
     <section className="relative isolate overflow-hidden bg-navy-950">
       {/* Photography carries the band; the navy wash keeps text contrast AAA.
-          The crowd drifts slowly under the wash as the band crosses — the
-          movement literally moving underneath the call to act. */}
-      <div className="absolute inset-x-0 -inset-y-[12%]">
-        <Parallax range={10} mobileRange={6} className="relative h-full">
-          <Image
-            src={heroCrowd}
-            alt="GLANCE members together at a national gathering"
-            fill
-            sizes="100vw"
-            className="object-cover object-[center_30%] opacity-45"
-          />
-        </Parallax>
-      </div>
+          The photograph drifts gently against the scroll so the close of the
+          story still moves even while the copy is settling. */}
+      <ParallaxImage speed={9} className="absolute inset-0">
+        <Image
+          src={heroCrowd}
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover object-[center_30%] opacity-45"
+        />
+      </ParallaxImage>
       <div
         aria-hidden="true"
         className="absolute inset-0 bg-gradient-to-r from-navy-950 via-navy-950/85 to-navy-950/55"

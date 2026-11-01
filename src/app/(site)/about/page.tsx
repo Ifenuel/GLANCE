@@ -6,7 +6,7 @@ import { pageBackgrounds } from "@/lib/page-backgrounds";
 import { MissionVision } from "@/components/site/mission-vision";
 import { Reveal } from "@/components/site/reveal";
 import { Container, Section, SectionHeading, VerifiedNote } from "@/components/ui";
-import { brand, contentNotices, founder, programme } from "@/lib/glance";
+import { contentNotices, founder, programme } from "@/lib/glance";
 
 export const metadata: Metadata = {
   title: "About GLANCE",

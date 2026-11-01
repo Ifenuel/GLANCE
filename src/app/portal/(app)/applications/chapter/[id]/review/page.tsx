@@ -22,10 +22,11 @@ export default async function ChapterApplicationReviewPage({
 }) {
   await requireRole(["SUPER_ADMIN", "AGID_ADMIN"]);
   const { id } = await params;
-  const application = await db.chapterApplication.findUnique({ where: { id } });
+  const [{ application }, entries] = await Promise.all([
+    db.chapterApplication.findUnique({ where: { id } }).then((a) => (a ? { application: a } : {})),
+    auditEntry({ limit: 6 }),
+  ]);
   if (!application) notFound();
-
-  const entries = await auditEntry({ limit: 6 });
 
   return (
     <Container>
@@ -62,13 +63,13 @@ export default async function ChapterApplicationReviewPage({
           </div>
         </div>
         <dl className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl bg-white/5 p-4">
+          <div className="rounded-xl bg-navy-50 p-4">
             <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Contact</dt>
-            <dd className="text-[13px] font-semibold text-white">{application.contactName} · {application.contactEmail}</dd>
+            <dd className="text-[13px] font-semibold text-navy-900">{application.contactName} · {application.contactEmail}</dd>
           </div>
-          <div className="rounded-xl bg-white/5 p-4">
+          <div className="rounded-xl bg-navy-50 p-4">
             <dt className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">Account status</dt>
-            <dd className="text-[13px] font-semibold text-white">
+            <dd className="text-[13px] font-semibold text-navy-900">
               {application.status === "PENDING" ? "Pending" : application.status === "APPROVED" ? "Approved" : "Rejected"}
             </dd>
           </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Image from "next/image";
+import type { StaticImageData } from "next/image";
 import Link from "next/link";
 import insightAudience from "@/assets/chapter-audience.jpg";
 import insightCheer from "@/assets/chapter-cheer.jpg";
@@ -54,6 +55,22 @@ const TAB_CATEGORIES: Record<string, "NEWS" | "STORY" | "ANNOUNCEMENT" | null> =
   news: "NEWS",
   stories: "STORY",
   announcements: "ANNOUNCEMENT",
+};
+
+/** What a news card may hold: published rows from the database, or the
+    sample fallback posts while nothing is published yet. */
+type NewsCard = {
+  id: string;
+  slug?: string;
+  title: string;
+  category?: string;
+  date?: string;
+  excerpt?: string | null;
+  image?: string | StaticImageData | null;
+  coverImageUrl?: string | null;
+  publishedAt?: Date | null;
+  createdAt?: Date | string | null;
+  content?: string | null;
 };
 
 export default function NewsPage({
@@ -133,14 +150,14 @@ async function NewsResults({
 
       {/* Posts Grid matching board 04 layout */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-        {filteredPosts.map((post: any) => (
+        {filteredPosts.map((post: NewsCard) => (
           <article
             key={post.id}
             className="lift group flex flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm sm:flex-row hover:border-navy-200"
           >
             <div className="relative h-48 shrink-0 overflow-hidden bg-navy-100 sm:h-auto sm:w-48">
               <Image
-                src={post.image || (post as any).coverImageUrl || (post as any).coverUrl || insightLecture}
+                src={post.image || post.coverImageUrl || insightLecture}
                 alt={post.title}
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"

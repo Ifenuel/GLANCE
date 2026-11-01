@@ -4,6 +4,7 @@ import { db } from "@/server/db";
 import { Card } from "@/components/ui";
 import { formatDateTime } from "@/lib/format";
 import { ChangePasswordForm } from "@/components/portal/forms/change-password-form";
+import { BroadcastVoiceForm } from "@/components/portal/forms/broadcast-voice-form";
 import { setGenderVisibilityAction } from "@/server/actions/member";
 import { logoutAction } from "@/server/actions/auth";
 
@@ -78,6 +79,19 @@ export default async function SettingsPage() {
           <div className="mt-4">
             <ChangePasswordForm />
           </div>
+        </Card>
+
+        <Card className="rise">
+          <h3 className="font-display text-[15px] font-bold text-navy-900">
+            Broadcast narrator
+          </h3>
+          <p className="mt-1 text-[12px] text-ink-500">
+            Tune the voice of the GLANCE broadcast film — accent, pitch, speed
+            and volume. Speed and volume shape the studio narration itself;
+            accent and pitch shape the fallback browser voice that speaks if
+            the recording cannot load. The tuning is saved on this device.
+          </p>
+          <BroadcastVoiceForm />
         </Card>
 
         {hasMemberProfile && user.profile?.gender !== "PREFER_NOT_TO_SAY" ? (
