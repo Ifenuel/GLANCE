@@ -17,16 +17,12 @@ export default async function ChapterMembersPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  // Either the internal id or the human-readable chapter code resolves here.
-  const chapter =
-    (await db.chapter.findUnique({
-      where: { id },
-      select: { id: true, name: true, code: true },
-    })) ??
-    (await db.chapter.findUnique({
-      where: { code: id.toUpperCase() },
-      select: { id: true, name: true, code: true },
-    }));
+  // Either the internal id or the human-readable chapter code resolves here
+  // — one query, not two queued lookups.
+  const chapter = await db.chapter.findFirst({
+    where: { OR: [{ id }, { code: id.toUpperCase() }] },
+    select: { id: true, name: true, code: true },
+  });
   if (!chapter) return <div>Chapter not found.</div>;
 
   // Server-side scoping: only GLANCE or this chapter's administrators may view.

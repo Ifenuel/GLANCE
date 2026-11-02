@@ -18,6 +18,7 @@ export default function LeadingAt27Page() {
   return (
     <>
       <PageHeader
+        pageKey="leading-at-27"
         background={pageBackgrounds.leadingAt27.image}
         backgroundAlt={pageBackgrounds.leadingAt27.alt}
         eyebrow="The book"

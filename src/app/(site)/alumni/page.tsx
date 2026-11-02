@@ -31,6 +31,7 @@ export default function AlumniPage() {
   return (
     <>
       <PageHeader
+        pageKey="alumni"
         background={pageBackgrounds.alumni.image}
         backgroundAlt={pageBackgrounds.alumni.alt}
         eyebrow="Alumni"

@@ -24,10 +24,11 @@ export default async function ChapterStatusPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  // Either the internal id or the human-readable chapter code resolves here.
-  const chapter =
-    (await db.chapter.findUnique({ where: { id } })) ??
-    (await db.chapter.findUnique({ where: { code: id.toUpperCase() } }));
+  // Either the internal id or the human-readable chapter code resolves here
+  // — one query, not two queued lookups.
+  const chapter = await db.chapter.findFirst({
+    where: { OR: [{ id }, { code: id.toUpperCase() }] },
+  });
   if (!chapter) notFound();
 
   // Server-side scoping: only GLANCE or this chapter's administrators may view.
@@ -39,11 +40,12 @@ export default async function ChapterStatusPage({
       (viewer.role === "CHAPTER_ADMIN" && viewer.chapterId === chapter.id));
   if (!mayView) notFound();
 
-  const memberCount = await db.memberProfile.count({
-    where: { chapterId: chapter.id, status: "ACTIVE" },
-  });
-
-  const entries = await auditEntry({ limit: 8 });
+  const [memberCount, entries] = await Promise.all([
+    db.memberProfile.count({
+      where: { chapterId: chapter.id, status: "ACTIVE" },
+    }),
+    auditEntry({ limit: 8 }),
+  ]);
 
   return (
     <Container>

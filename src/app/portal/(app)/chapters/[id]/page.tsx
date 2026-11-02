@@ -29,12 +29,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
  * code never renders as "Chapter not found".
  */
 async function findChapter(idOrCode: string) {
-  return (
-    (await db.chapter.findUnique({ where: { id: idOrCode } })) ??
-    (await db.chapter.findUnique({
-      where: { code: idOrCode.toUpperCase() },
-    }))
-  );
+  // One query instead of two sequential lookups: ids and codes never collide.
+  return db.chapter.findFirst({
+    where: { OR: [{ id: idOrCode }, { code: idOrCode.toUpperCase() }] },
+  });
 }
 
 export default async function ChapterDetailPage({
@@ -59,10 +57,6 @@ export default async function ChapterDetailPage({
   const isOfficer = viewer!.role === "SUPER_ADMIN" || viewer!.role === "AGID_ADMIN";
   const isChapterAdmin = viewer!.role === "CHAPTER_ADMIN";
 
-  const memberCounts = await db.memberProfile.count({
-    where: { chapterId: chapter.id, status: "ACTIVE" },
-  });
-
   const statusLabel =
     chapter.status === "ACTIVE"
       ? "Active"
@@ -72,25 +66,31 @@ export default async function ChapterDetailPage({
           ? "Suspended"
           : "Deactivated";
 
-  // The audit trail is an officer instrument: a chapter administrator only
-  // ever sees the entries that concern their own chapter.
-  const entries = await auditEntry({
-    limit: 4,
-    where: isOfficer
-      ? {}
-      : { entityType: "Chapter", entityId: chapter.id },
-  });
-
-  // The chapter's own activity reports, so the coordinator reviews and files
-  // them from the chapter desk without opening the reports page first.
-  const recentReports = isChapterAdmin
-    ? await db.activityReport.findMany({
-        where: { chapterId: chapter.id },
-        orderBy: { activityDate: "desc" },
-        take: 5,
-        select: { id: true, title: true, activityDate: true, attendeeCount: true },
-      })
-    : [];
+  // Counts, audit trail and the chapter's own reports are independent, so
+  // they run in one wave instead of three sequential round trips.
+  const [memberCounts, entries, recentReports] = await Promise.all([
+    db.memberProfile.count({
+      where: { chapterId: chapter.id, status: "ACTIVE" },
+    }),
+    // The audit trail is an officer instrument: a chapter administrator only
+    // ever sees the entries that concern their own chapter.
+    auditEntry({
+      limit: 4,
+      where: isOfficer
+        ? {}
+        : { entityType: "Chapter", entityId: chapter.id },
+    }),
+    // The chapter's own activity reports, so the coordinator reviews and files
+    // them from the chapter desk without opening the reports page first.
+    isChapterAdmin
+      ? db.activityReport.findMany({
+          where: { chapterId: chapter.id },
+          orderBy: { activityDate: "desc" },
+          take: 5,
+          select: { id: true, title: true, activityDate: true, attendeeCount: true },
+        })
+      : Promise.resolve([]),
+  ]);
 
   return (
     <div className="space-y-8">

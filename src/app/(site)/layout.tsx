@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { CinematicIntro } from "@/components/site/cinematic-intro";
 import { BackToTop } from "@/components/site/back-to-top";
 import { EventCountdownBanner } from "@/components/site/event-countdown-banner";
-import { listUpcomingEvents } from "@/server/content";
+import { getBannerSettings, listUpcomingEvents } from "@/server/content";
 
 // Every public page reads live GLANCE records (chapters, posts, media). That
 // data is intentionally fresh, so these routes render on demand instead of
@@ -13,11 +13,13 @@ import { listUpcomingEvents } from "@/server/content";
 // error on navigation.
 export const instant = false;
 
-/** The event advertisement, as its own suspending slot. The next upcoming
- * event pops up on the visit. Failures here must never take the site down —
- * an empty banner is fine: listUpcomingEvents already selects only events
- * that have not started (the time comparison lives inside its cached query,
- * where Date.now() is stable), so no further filtering happens here.
+/** The event advertisement, as its own suspending slot. Portal → Website
+ * content decides whether it shows (banner.enabled) and which upcoming event
+ * it advertises (banner.eventId); with no choice saved it falls back to the
+ * soonest published event. Failures here must never take the site down — an
+ * empty banner is fine: listUpcomingEvents already selects only events that
+ * have not started (the time comparison lives inside its cached query, where
+ * Date.now() is stable), so no further filtering happens here.
  *
  * The await lives INSIDE the slot, not in the layout body: while the static
  * shell prerenders, the ribbon's live data read produces a postponed hole,
@@ -26,14 +28,24 @@ export const instant = false;
  * build error on /about was about. Wrapping this slot keeps the whole layout
  * shell static. */
 async function EventBannerSlot() {
-  const upcoming = await listUpcomingEvents(1).catch(() => []);
-  const featured = upcoming[0]
+  const [settings, upcoming] = await Promise.all([
+    getBannerSettings().catch(() => ({ enabled: true, eventId: "" })),
+    listUpcomingEvents(12).catch(() => []),
+  ]);
+
+  if (!settings.enabled) return null;
+
+  const chosen =
+    (settings.eventId
+      ? upcoming.find((event) => event.id === settings.eventId)
+      : undefined) ?? upcoming[0];
+  const featured = chosen
     ? {
-        id: upcoming[0].id,
-        title: upcoming[0].title,
-        startsAt: upcoming[0].startsAt.toISOString(),
-        location: upcoming[0].location,
-        registrationUrl: upcoming[0].registrationUrl,
+        id: chosen.id,
+        title: chosen.title,
+        startsAt: chosen.startsAt.toISOString(),
+        location: chosen.location,
+        registrationUrl: chosen.registrationUrl,
       }
     : null;
   return featured ? <EventCountdownBanner event={featured} /> : null;

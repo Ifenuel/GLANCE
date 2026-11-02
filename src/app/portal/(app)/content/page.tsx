@@ -6,7 +6,15 @@ import { Card } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { PostForm } from "@/components/portal/forms/post-form";
 import { SiteSectionsForm } from "@/components/portal/forms/site-sections-form";
-import { getSiteSections } from "@/server/content";
+import { PageContentForm } from "@/components/portal/forms/page-content-form";
+import { BannerSettingsForm } from "@/components/portal/forms/banner-settings-form";
+import {
+  getBannerSettings,
+  getAllPageContent,
+  getSiteSections,
+  listUpcomingEvents,
+} from "@/server/content";
+import { EDITABLE_PAGES } from "@/lib/site-pages";
 import {
   deletePostAction,
   setPostPublishedAction,
@@ -154,7 +162,62 @@ export default async function ContentCmsPage() {
       </div>
 
       <SiteSectionsCard />
+
+      <PageContentCard />
+
+      <BannerCard />
     </div>
+  );
+}
+
+/** Every public page's headline/intro copy, editable without a developer. */
+async function PageContentCard() {
+  const stored = await getAllPageContent();
+
+  return (
+    <Card className="min-w-0">
+      <h3 className="border-b border-line pb-3 text-sm font-extrabold text-navy-950">
+        Page copy across the website
+      </h3>
+      <p className="mt-2 text-[12.5px] leading-[1.7] text-ink-500">
+        Headlines, intros and section copy for the public pages. Whatever you
+        save here replaces the built-in wording on that page; clear a field to
+        bring the built-in copy back. Changes appear on the website right away.
+      </p>
+      <div className="mt-5">
+        <PageContentForm pages={EDITABLE_PAGES} initial={stored} />
+      </div>
+    </Card>
+  );
+}
+
+/** The countdown ribbon at the top of every public page. */
+async function BannerCard() {
+  const [settings, upcoming] = await Promise.all([
+    getBannerSettings(),
+    listUpcomingEvents(30),
+  ]);
+
+  return (
+    <Card className="min-w-0">
+      <h3 className="border-b border-line pb-3 text-sm font-extrabold text-navy-950">
+        Countdown banner
+      </h3>
+      <p className="mt-2 text-[12.5px] leading-[1.7] text-ink-500">
+        The ribbon at the very top of the public website. It counts down to the
+        event it advertises — manage the events themselves under Events.
+      </p>
+      <div className="mt-5">
+        <BannerSettingsForm
+          settings={settings}
+          events={upcoming.map((event) => ({
+            id: event.id,
+            title: event.title,
+            startsAt: event.startsAt.toISOString(),
+          }))}
+        />
+      </div>
+    </Card>
   );
 }
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/button-link";
 import { MemberIcon, OpportunityIcon, PartnerIcon, UsersIcon } from "@/components/icons";
 import { PageHeader } from "@/components/site/page-header";
@@ -7,6 +8,18 @@ import { MissionVision } from "@/components/site/mission-vision";
 import { Reveal } from "@/components/site/reveal";
 import { Container, Section, SectionHeading, VerifiedNote } from "@/components/ui";
 import { contentNotices, founder, programme } from "@/lib/glance";
+import { getPageContent } from "@/server/content";
+
+/** Portal-stored copy replaces the fallback paragraph(s); empty keeps the
+ * built-in copy exactly as written below. */
+function intro(stored: string | undefined, fallback: ReactNode) {
+  const text = stored?.trim();
+  if (!text) return fallback;
+  return text
+    .split(/\n+/)
+    .filter(Boolean)
+    .map((paragraph) => <p key={paragraph.slice(0, 40)}>{paragraph}</p>);
+}
 
 export const metadata: Metadata = {
   title: "About GLANCE",
@@ -91,10 +104,13 @@ const membershipJourney = [
 ] as const;
 
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const stored = await getPageContent("about");
+
   return (
     <>
       <PageHeader
+        pageKey="about"
         background={pageBackgrounds.about.image}
         backgroundAlt={pageBackgrounds.about.alt}
         eyebrow="About GLANCE"
@@ -124,7 +140,10 @@ export default function AboutPage() {
         }
       />
 
-      <MissionVision />
+      <MissionVision
+        mission={stored.mission || undefined}
+        vision={stored.vision || undefined}
+      />
 
       {/* ── The four practices + the statement the board leads with ──────── */}
       <section className="bg-white pt-4 pb-16 lg:pb-20">
@@ -176,7 +195,8 @@ export default function AboutPage() {
           <Reveal delay={140}>
             <figure className="mt-10 rounded-2xl bg-navy-950 px-6 py-9 text-center sm:px-12">
               <blockquote className="mx-auto max-w-[720px] text-[clamp(19px,2.6vw,26px)] leading-[1.45] font-extrabold tracking-[-0.02em] text-white">
-                “Young people are not just the future; they are the solution.”
+                {stored.quote ||
+                  "“Young people are not just the future; they are the solution.”"}
               </blockquote>
               <figcaption className="mt-4 text-[11px] font-bold tracking-[0.22em] text-gold-400 uppercase">
                 — {founder.name}, Founder
@@ -191,15 +211,18 @@ export default function AboutPage() {
         <Container>
           <Reveal>
             <SectionHeading
-              eyebrow="What we stand for"
-              title="The core values"
-              accent="and the philosophy behind them."
-              intro={
+              eyebrow={stored.coreEyebrow || "What we stand for"}
+              title={stored.coreTitle || "The core values"}
+              accent={
+                stored.coreAccent || "and the philosophy behind them."
+              }
+              intro={intro(
+                stored.coreIntro,
                 <p>
                   GLANCE is built on three values that shape every session, and a
                   philosophy that turns those values into practice.
-                </p>
-              }
+                </p>,
+              )}
             />
           </Reveal>
 
@@ -246,16 +269,19 @@ export default function AboutPage() {
         <Container>
           <Reveal>
             <SectionHeading
-              eyebrow="Joining GLANCE"
-              title="The membership journey"
-              accent="From application to full integration."
-              intro={
+              eyebrow={stored.journeyEyebrow || "Joining GLANCE"}
+              title={stored.journeyTitle || "The membership journey"}
+              accent={
+                stored.journeyAccent || "From application to full integration."
+              }
+              intro={intro(
+                stored.journeyIntro,
                 <p>
                   Membership is a structured path, not a sign-up. Every stage is
                   designed to confirm commitment and build understanding before a
                   member is fully integrated.
-                </p>
-              }
+                </p>,
+              )}
             />
           </Reveal>
           <ol className="relative mt-10 max-w-[760px]">
@@ -288,18 +314,21 @@ export default function AboutPage() {
           <div className="grid gap-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
             <Reveal>
               <SectionHeading
-                eyebrow="What we do"
-                title="More than leadership training."
-                accent="A foundation for meaningful impact."
-                intro={
+                eyebrow={stored.whatEyebrow || "What we do"}
+                title={stored.whatTitle || "More than leadership training."}
+                accent={
+                  stored.whatAccent || "A foundation for meaningful impact."
+                }
+                intro={intro(
+                  stored.whatIntro,
                   <p>
                     GLANCE helps young people understand the systems that shape
                     society, develop the character to lead responsibly, and
                     acquire the confidence and practical skills to make a
                     difference. Members are prepared to move beyond discussing
                     change to participating in it.
-                  </p>
-                }
+                  </p>,
+                )}
               />
               <ul className="mt-8 space-y-6">
                 {principles.map((principle) => (
@@ -318,15 +347,18 @@ export default function AboutPage() {
             <Reveal delay={100}>
               <div className="rounded-2xl border border-line bg-white p-6 lg:p-8">
                 <SectionHeading
-                  eyebrow="How it runs"
-                  title="A structured, peer-led programme"
-                  intro={
+                  eyebrow={stored.howEyebrow || "How it runs"}
+                  title={
+                    stored.howTitle || "A structured, peer-led programme"
+                  }
+                  intro={intro(
+                    stored.howIntro,
                     <p>
                       Clubs are led by students for students, with GLANCE providing
                       the framework, oversight and chapters. GLANCE reviews and
                       activates each chapter before it can register members.
-                    </p>
-                  }
+                    </p>,
+                  )}
                 />
                 <dl className="mt-7 grid gap-5 sm:grid-cols-2">
                   <div>
@@ -373,12 +405,15 @@ export default function AboutPage() {
           <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
             <Reveal>
               <SectionHeading
-                eyebrow="Leadership"
-                title="Founded by"
+                eyebrow={stored.founderEyebrow || "Leadership"}
+                title={stored.founderTitle || "Founded by"}
                 accent={founder.name}
-                intro={founder.bio.map((paragraph) => (
-                  <p key={paragraph.slice(0, 24)}>{paragraph}</p>
-                ))}
+                intro={intro(
+                  stored.founderIntro,
+                  founder.bio.map((paragraph) => (
+                    <p key={paragraph.slice(0, 24)}>{paragraph}</p>
+                  )),
+                )}
               />
             </Reveal>
             <Reveal delay={100}>

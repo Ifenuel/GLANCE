@@ -81,7 +81,9 @@ export default async function MembersPage({
   }
 
   const currentPage = Math.max(1, Number.parseInt(page ?? "1", 10) || 1);
-  const [members, total] = await Promise.all([
+  // One round trip: list, total, filter options and the category breakdown
+  // run together instead of queueing one wave after another.
+  const [members, total, chaptersForFilter, breakdown] = await Promise.all([
     db.memberProfile.findMany({
       where: where as never,
       orderBy: [{ registeredAt: "desc" }],
@@ -104,6 +106,18 @@ export default async function MembersPage({
       },
     }),
     db.memberProfile.count({ where: where as never }),
+    isOfficer
+      ? db.chapter.findMany({
+          orderBy: [{ institution: "asc" }],
+          select: { id: true, code: true, name: true, institution: true },
+        })
+      : Promise.resolve([]),
+    // Category breakdown for the stats strip, same wave as the list itself.
+    db.memberProfile.groupBy({
+      by: ["membershipCategory"],
+      where: where as never,
+      _count: true,
+    }),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -117,21 +131,7 @@ export default async function MembersPage({
     return `/portal/members?${params.toString()}`;
   };
 
-  const chaptersForFilter = isOfficer
-    ? await db.chapter.findMany({
-        orderBy: [{ institution: "asc" }],
-        select: { id: true, code: true, name: true, institution: true },
-      })
-    : [];
-
   const ownChapterId = viewer.role === "CHAPTER_ADMIN" ? viewer.chapterId : null;
-
-  // Executives by chapter for quick context on who runs each chapter.
-  const breakdown = await db.memberProfile.groupBy({
-    by: ["membershipCategory"],
-    where: where as never,
-    _count: true,
-  });
 
   return (
     <div className="space-y-6">

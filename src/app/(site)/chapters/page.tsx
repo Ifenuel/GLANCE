@@ -21,6 +21,7 @@ export default async function ChaptersPage() {
   return (
     <>
       <PageHeader
+        pageKey="chapters"
         background={pageBackgrounds.chapters.image}
         backgroundAlt={pageBackgrounds.chapters.alt}
         eyebrow="Our network"

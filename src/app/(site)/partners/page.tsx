@@ -32,6 +32,7 @@ export default function PartnersPage() {
   return (
     <>
       <PageHeader
+        pageKey="partners"
         background={pageBackgrounds.partners.image}
         backgroundAlt={pageBackgrounds.partners.alt}
         eyebrow="Partners"

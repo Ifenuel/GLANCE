@@ -375,6 +375,92 @@ export async function getSiteSections(): Promise<SiteSections> {
   );
 }
 
+/**
+ * Stored copy for one editable page (`page.<key>.<field>` rows), keyed by
+ * field name. Missing fields are simply absent — callers fall back to the
+ * built-in copy, so a page renders identically until someone edits it.
+ */
+export async function getPageContent(
+  page: string,
+): Promise<Record<string, string>> {
+  "use cache";
+  cacheTag("site-content");
+  cacheLife("minutes");
+
+  const prefix = `page.${page}.`;
+  return safeQuery(
+    `page-content:${page}`,
+    async () => {
+      const rows = await db.siteContent.findMany({
+        where: { key: { startsWith: prefix } },
+        select: { key: true, value: true },
+      });
+      const values: Record<string, string> = {};
+      for (const row of rows) values[row.key.slice(prefix.length)] = row.value;
+      return values;
+    },
+    {},
+  );
+}
+
+/** Every stored page override, grouped by page — feeds the portal editor. */
+export async function getAllPageContent(): Promise<
+  Record<string, Record<string, string>>
+> {
+  "use cache";
+  cacheTag("site-content");
+  cacheLife("minutes");
+
+  return safeQuery(
+    "all-page-content",
+    async () => {
+      const rows = await db.siteContent.findMany({
+        where: { key: { startsWith: "page." } },
+        select: { key: true, value: true },
+      });
+      const grouped: Record<string, Record<string, string>> = {};
+      for (const row of rows) {
+        const [, page, ...rest] = row.key.split(".");
+        if (!page || rest.length === 0) continue;
+        grouped[page] ??= {};
+        grouped[page][rest.join(".")] = row.value;
+      }
+      return grouped;
+    },
+    {},
+  );
+}
+
+export type BannerSettings = {
+  /** `banner.enabled` = "0" hides the ribbon; absent or anything else shows it. */
+  enabled: boolean;
+  /** Empty = automatic (the soonest upcoming published event). */
+  eventId: string;
+};
+
+/** Countdown-banner controls, edited from the portal's Website content screen. */
+export async function getBannerSettings(): Promise<BannerSettings> {
+  "use cache";
+  cacheTag("site-content");
+  cacheLife("minutes");
+
+  return safeQuery(
+    "banner-settings",
+    async (): Promise<BannerSettings> => {
+      const rows = await db.siteContent.findMany({
+        where: { key: { in: ["banner.enabled", "banner.eventId"] } },
+        select: { key: true, value: true },
+      });
+      const byKey = new Map(rows.map((row) => [row.key, row.value]));
+      return {
+        enabled: byKey.get("banner.enabled") !== "0",
+        eventId: byKey.get("banner.eventId") ?? "",
+      };
+    },
+    { enabled: true, eventId: "" },
+  );
+}
+
 /** Live counts from this platform's own records (never presented as GLANCE results). */
 export async function platformSnapshot() {
   "use cache";

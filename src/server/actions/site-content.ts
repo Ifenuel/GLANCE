@@ -6,6 +6,7 @@ import { db } from "@/server/db";
 import { requireRole } from "@/server/auth";
 import { requestIp, writeAudit } from "@/server/audit";
 import { parseForm, type FormState } from "@/server/validation";
+import { isEditablePage } from "@/lib/site-pages";
 
 /**
  * Editable public site sections (intros and header photographs for the events
@@ -99,5 +100,143 @@ export async function saveSiteSectionsAction(
     return { status: "success", success: "Site sections updated on the website." };
   } catch {
     return { status: "error", error: "The sections could not be saved. Try again." };
+  }
+}
+
+/**
+ * Saves one page's editable copy from the registry in src/lib/site-pages.ts.
+ * Fields arrive as `f.<name>`; an empty value clears the row so the page
+ * falls back to its built-in copy — the same contract as the sections above.
+ */
+export async function savePageContentAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireRole(["SUPER_ADMIN", "AGID_ADMIN", "COMM_MANAGER"]);
+
+  const pageKey = String(formData.get("page") ?? "");
+  const page = isEditablePage(pageKey);
+  if (!page) {
+    return { status: "error", error: "That page cannot be edited here." };
+  }
+
+  const values = new Map<string, string>();
+  for (const field of page.fields) {
+    const raw = formData.get(`f.${field.name}`);
+    const value = (typeof raw === "string" ? raw : "")
+      .trim()
+      .slice(0, field.max ?? 1200);
+    values.set(field.name, value);
+  }
+
+  try {
+    await db.$transaction(
+      Array.from(values, ([field, value]) => {
+        const key = `page.${page.key}.${field}`;
+        return value
+          ? db.siteContent.upsert({
+              where: { key },
+              create: { key, value, updatedBy: user.id },
+              update: { value, updatedBy: user.id },
+            })
+          : db.siteContent.deleteMany({ where: { key } });
+      }),
+    );
+
+    await writeAudit({
+      actorId: user.id,
+      actorRole: user.role,
+      action: "page_content.update",
+      entityType: "SiteContent",
+      entityId: null,
+      ip: await requestIp(),
+      metadata: {
+        page: page.key,
+        edited: Array.from(values)
+          .filter(([, value]) => value !== "")
+          .map(([field]) => field),
+        cleared: Array.from(values)
+          .filter(([, value]) => value === "")
+          .map(([field]) => field),
+      },
+    });
+
+    revalidateTag("site-content", "minutes");
+    revalidatePath(page.path);
+
+    return {
+      status: "success",
+      success: `${page.label} updated — it appears on the website right away.`,
+    };
+  } catch {
+    return { status: "error", error: "The page copy could not be saved. Try again." };
+  }
+}
+
+/** Show/hide the top countdown ribbon and choose which event it advertises. */
+export async function saveBannerSettingsAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireRole(["SUPER_ADMIN", "AGID_ADMIN", "COMM_MANAGER"]);
+
+  const enabled = formData.get("show") === "on";
+  const eventId = String(formData.get("eventId") ?? "").trim();
+
+  if (eventId) {
+    const event = await db.event.findFirst({
+      where: { id: eventId, status: "PUBLISHED" },
+      select: { id: true },
+    });
+    if (!event) {
+      return {
+        status: "error",
+        error: "Choose an upcoming published event, or switch back to automatic.",
+      };
+    }
+  }
+
+  try {
+    await db.$transaction([
+      db.siteContent.upsert({
+        where: { key: "banner.enabled" },
+        create: {
+          key: "banner.enabled",
+          value: enabled ? "1" : "0",
+          updatedBy: user.id,
+        },
+        update: { value: enabled ? "1" : "0", updatedBy: user.id },
+      }),
+      eventId
+        ? db.siteContent.upsert({
+            where: { key: "banner.eventId" },
+            create: { key: "banner.eventId", value: eventId, updatedBy: user.id },
+            update: { value: eventId, updatedBy: user.id },
+          })
+        : db.siteContent.deleteMany({ where: { key: "banner.eventId" } }),
+    ]);
+
+    await writeAudit({
+      actorId: user.id,
+      actorRole: user.role,
+      action: "banner_settings.update",
+      entityType: "SiteContent",
+      entityId: null,
+      ip: await requestIp(),
+      metadata: { enabled, eventId: eventId || "automatic" },
+    });
+
+    revalidateTag("site-content", "minutes");
+    // The ribbon lives in the (site) layout, so every public page re-renders.
+    revalidatePath("/", "layout");
+
+    return {
+      status: "success",
+      success: enabled
+        ? "Countdown banner saved — it shows across the website."
+        : "Countdown banner is now hidden across the website.",
+    };
+  } catch {
+    return { status: "error", error: "The banner settings could not be saved. Try again." };
   }
 }

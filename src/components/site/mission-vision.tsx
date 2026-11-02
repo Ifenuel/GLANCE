@@ -12,7 +12,15 @@ import { mission, vision } from "@/lib/glance";
  * block enters the viewport the caret walks the mission first, pauses, then
  * the vision one thought at a time, the way a speaker would deliver it.
  */
-export function MissionVision() {
+export function MissionVision({
+  mission: missionText = mission,
+  vision: visionText = vision,
+}: {
+  /** Overridable from the portal's About page copy; defaults to the
+   *  built-in statements in src/lib/glance.ts. */
+  mission?: string;
+  vision?: string;
+}) {
   return (
     <section
       id="mission"
@@ -35,15 +43,15 @@ export function MissionVision() {
 
         <TypedBlock
           label="Our mission"
-          text={mission}
+          text={missionText}
           startDelayMs={250}
           className="mt-10"
         />
         <TypedBlock
           label="Our vision"
-          text={vision}
+          text={visionText}
           // Starts once the mission has finished typing.
-          startDelayMs={250 + mission.length * 14 + 500}
+          startDelayMs={250 + missionText.length * 14 + 500}
           className="mt-14"
         />
       </div>

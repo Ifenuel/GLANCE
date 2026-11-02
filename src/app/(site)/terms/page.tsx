@@ -14,6 +14,7 @@ export default function TermsPage() {
   return (
     <>
       <PageHeader
+        pageKey="terms"
         eyebrow="Legal"
         title="Terms of Use"
         background={legalBackground.image}

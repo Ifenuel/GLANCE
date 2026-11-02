@@ -46,6 +46,7 @@ export default function PathwayPage() {
   return (
     <>
       <PageHeader
+        pageKey="pathway"
         background={pageBackgrounds.pathway.image}
         backgroundAlt={pageBackgrounds.pathway.alt}
         eyebrow="The GLANCE Pathway"

@@ -5,6 +5,7 @@ import { Reveal } from "@/components/site/reveal";
 import { HeroMotion } from "@/components/home/hero-motion";
 import { Container } from "@/components/ui";
 import { heroCopy } from "@/lib/glance";
+import { getPageContent } from "@/server/content";
 
 /**
  * The homepage hero: the real film still of the founder on the ground at a
@@ -14,7 +15,11 @@ import { heroCopy } from "@/lib/glance";
  * board further down the page, not here: the founder asked for the hero to
  * stand on the photograph and the headline alone.
  */
-export function HomeHero() {
+export async function HomeHero() {
+  // Portal → Website content can override any line; empty fields keep the
+  // built-in copy below.
+  const stored = await getPageContent("home");
+
   return (
     <section className="relative isolate overflow-hidden bg-navy-950">
       <HeroMotion />
@@ -59,25 +64,29 @@ export function HomeHero() {
         <Reveal className="max-w-[680px]">
           <p data-motion="eyebrow" className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-[10.5px] font-bold tracking-[0.22em] text-gold-300 uppercase backdrop-blur-md">
             <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-gold-400 shadow-[0_0_12px_rgba(251,202,75,0.9)]" />
-            {heroCopy.eyebrow}
+            {stored.eyebrow || heroCopy.eyebrow}
           </p>
 
           <h1 className="mt-7 text-[clamp(38px,7vw,68px)] leading-[0.98] font-extrabold tracking-[-0.035em] text-white">
             <span data-motion="headline-1" className="block overflow-hidden">
-              <span className="block will-change-transform">Young People.</span>
+              <span className="block will-change-transform">
+                {stored.headline1 || "Young People."}
+              </span>
             </span>
             <span data-motion="headline-2" className="block overflow-hidden">
-              <span className="block will-change-transform">Real Solutions.</span>
+              <span className="block will-change-transform">
+                {stored.headline2 || "Real Solutions."}
+              </span>
             </span>
             <span data-motion="headline-3" className="block overflow-hidden">
               <span className="block bg-gradient-to-r from-gold-300 via-gold-400 to-gold-500 bg-clip-text will-change-transform text-transparent">
-                A Stronger Nation.
+                {stored.headline3 || "A Stronger Nation."}
               </span>
             </span>
           </h1>
 
           <p data-motion="supporting" className="mt-7 max-w-[560px] text-[16px] leading-[1.8] text-white/80">
-            {heroCopy.supporting}
+            {stored.supporting || heroCopy.supporting}
           </p>
 
           <div data-motion="actions" className="mt-9 flex flex-wrap items-center gap-3">

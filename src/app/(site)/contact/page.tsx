@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/site/page-header";
 import { pageBackgrounds } from "@/lib/page-backgrounds";
 import { Container, Section, VerifiedNote } from "@/components/ui";
 import { brand } from "@/lib/glance";
+import { getPageContent } from "@/server/content";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -12,10 +13,13 @@ export const metadata: Metadata = {
     "Contact the GLANCE secretariat.",
 };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const stored = await getPageContent("contact");
+
   return (
     <>
       <PageHeader
+        pageKey="contact"
         background={pageBackgrounds.contact.image}
         backgroundAlt={pageBackgrounds.contact.alt}
         eyebrow="Contact"
@@ -49,10 +53,10 @@ export default function ContactPage() {
 
               <div className="rounded-2xl border border-line bg-white p-6">
                 <h2 className="text-[15px] font-extrabold text-navy-900">
-                  Start a chapter
+                  {stored.chapterTitle || "Start a chapter"}
                 </h2>
                 <p className="mt-2 text-[14px] leading-[1.85] text-ink-500">
-                  Bring a GLANCE club to your campus or community.
+                  {stored.chapterBody || "Bring a GLANCE club to your campus or community."}
                 </p>
                 <Link
                   href="/start-a-chapter"
@@ -64,12 +68,16 @@ export default function ContactPage() {
 
               <div className="rounded-2xl border border-line bg-navy-50/40 p-6">
                 <h2 className="text-[15px] font-extrabold text-navy-900">
-                  Membership and account support
+                  {stored.supportTitle || "Membership and account support"}
                 </h2>
                 <p className="mt-3 text-[13.5px] leading-[1.85] text-ink-500">
-                  For activation codes, invitations or account recovery, contact
-                  your chapter&apos;s coordinators first. GLANCE can assist where
-                  the chapter is not yet active.
+                  {stored.supportBody || (
+                    <>
+                      For activation codes, invitations or account recovery, contact
+                      your chapter&apos;s coordinators first. GLANCE can assist where
+                      the chapter is not yet active.
+                    </>
+                  )}
                 </p>
                 <VerifiedNote>
                   Email delivery for invitations and password resets requires a
@@ -82,7 +90,7 @@ export default function ContactPage() {
 
             <div className="rounded-2xl border border-line bg-white p-6 lg:p-8">
               <h2 className="text-[20px] font-extrabold text-navy-900">
-                Send a message
+                {stored.formTitle || "Send a message"}
               </h2>
               <div className="mt-7">
                 <ContactForm />

@@ -23,14 +23,6 @@ export default async function InvitationsPage({
 }) {
   const { role, status } = await searchParams;
   const user = await getCurrentUser();
-  const chapters =
-    user?.role === "AGID_ADMIN"
-      ? await db.chapter.findMany({
-          where: { status: "ACTIVE" },
-          orderBy: { name: "asc" },
-          select: { id: true, name: true, code: true },
-        })
-      : [];
   const where: Record<string, unknown> = { status: "PENDING" };
   // Chapter administrators only see invitations for their own chapter.
   if (user?.role === "CHAPTER_ADMIN") where.chapterId = user.chapterId;
@@ -41,21 +33,32 @@ export default async function InvitationsPage({
   if (role) where.role = role;
   if (status) where.status = status;
 
-  const invitations = await db.invitation.findMany({
-    where: where as never,
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      email: true,
-      role: true,
-      chapter: { select: { id: true, code: true, name: true } },
-      code: true,
-      status: true,
-      expiresAt: true,
-      acceptedAt: true,
-      createdAt: true,
-    },
-  });
+  // The chapter filter list and the invitation rows don't depend on each
+  // other — one wave instead of two.
+  const [chapters, invitations] = await Promise.all([
+    user?.role === "AGID_ADMIN"
+      ? db.chapter.findMany({
+          where: { status: "ACTIVE" },
+          orderBy: { name: "asc" },
+          select: { id: true, name: true, code: true },
+        })
+      : Promise.resolve([]),
+    db.invitation.findMany({
+      where: where as never,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        chapter: { select: { id: true, code: true, name: true } },
+        code: true,
+        status: true,
+        expiresAt: true,
+        acceptedAt: true,
+        createdAt: true,
+      },
+    }),
+  ]);
 
   return (
     <div className="space-y-8">

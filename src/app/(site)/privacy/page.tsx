@@ -14,6 +14,7 @@ export default function PrivacyPage() {
   return (
     <>
       <PageHeader
+        pageKey="privacy"
         background={legalBackground.image}
         backgroundAlt={legalBackground.alt}
         eyebrow="Legal"

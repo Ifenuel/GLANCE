@@ -54,6 +54,7 @@ export default async function JoinPage({
   return (
     <>
       <PageHeader
+        pageKey="join"
         background={pageBackgrounds.join.image}
         backgroundAlt={pageBackgrounds.join.alt}
         eyebrow="Membership"

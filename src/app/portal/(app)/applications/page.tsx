@@ -74,21 +74,21 @@ export default async function ApplicationsPage({
     ...(trimmedCode ? { chapterCode: trimmedCode } : {}),
   };
 
-  const chapterApplications =
+  // Both queues are independent — fetch them in one wave, not back to back.
+  const [chapterApplications, joinApplications] = await Promise.all([
     typeFilter === "join"
-      ? []
-      : await db.chapterApplication.findMany({
+      ? Promise.resolve([])
+      : db.chapterApplication.findMany({
           where: applicationWhere,
           orderBy: { createdAt: "desc" },
-        });
-
-  const joinApplications =
+        }),
     typeFilter === "chapter"
-      ? []
-      : await db.joinApplication.findMany({
+      ? Promise.resolve([])
+      : db.joinApplication.findMany({
           where: whereJoin,
           orderBy: { createdAt: "desc" },
-        });
+        }),
+  ]);
 
   const pendingChapter = chapterApplications.filter((a) => a.status === "PENDING").length;
   const pendingJoin = joinApplications.filter((a) => a.status === "PENDING").length;

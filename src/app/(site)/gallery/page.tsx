@@ -33,6 +33,7 @@ export default async function GalleryPage() {
   return (
     <>
       <PageHeader
+        pageKey="gallery"
         background={pageBackgrounds.gallery.image}
         backgroundAlt={pageBackgrounds.gallery.alt}
         eyebrow="Gallery"
