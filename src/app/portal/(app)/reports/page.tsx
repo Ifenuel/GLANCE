@@ -57,33 +57,44 @@ export default async function ReportsPage({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <SectionHeading
-            eyebrow="Network management"
+            eyebrow={
+              viewer.role === "CHAPTER_ADMIN" ? "My chapter" : "Network management"
+            }
             title="Activity reports"
             intro={
-              <p>
-                Submit weekly or monthly activity reports for your chapter, and
-                review what chapters across the network are doing.
-              </p>
+              viewer.role === "CHAPTER_ADMIN" ? (
+                <p>
+                  Submit weekly or monthly activity reports for your own
+                  chapter.
+                </p>
+              ) : (
+                <p>
+                  Submit weekly or monthly activity reports for your chapter,
+                  and review what chapters across the network are doing.
+                </p>
+              )
             }
           />
         </div>
         <div className="flex gap-3">
-          <a
-            href="/portal/reports/new"
-            className="inline-flex h-11 items-center justify-center rounded-lg bg-gold-400 px-5 text-[13px] font-bold text-navy-900 hover:bg-gold-500"
-          >
-            New report
-          </a>
-          <ButtonLink href="/portal/chapters" variant="outline">
-            Back to chapters
-          </ButtonLink>
+          {viewer.role !== "CHAPTER_ADMIN" ? (
+            <ButtonLink href="/portal/chapters" variant="outline">
+              Back to chapters
+            </ButtonLink>
+          ) : (
+            <ButtonLink href="/portal/chapter" variant="outline">
+              My chapter
+            </ButtonLink>
+          )}
         </div>
       </div>
 
       {chapters.length > 0 ? (
         <Card>
           <p className="text-[12.5px] text-ink-500">
-            Filter reports by chapter code. Leave blank to see all reports.
+            {viewer.role === "CHAPTER_ADMIN"
+              ? "Every report you submit here goes to the GLANCE team and is kept in the audit trail."
+              : "Filter reports by chapter code. Leave blank to see all reports."}
           </p>
           <form
             action="/portal/reports"
@@ -107,24 +118,37 @@ export default async function ReportsPage({
         </Card>
       ) : null}
 
-      <Card>
-        <h3 className="text-base font-extrabold text-navy-900">Submit an activity report</h3>
-        <p className="text-[12.5px] text-ink-500">
-          Report chapter activity for the PR period: what the chapter did, who
-          participated, and the outcome. Reports are part of the audit trail.
-        </p>
-        <div className="mt-4">
-          <ReportForm
-            chapter={
-              chapters[0] ?? {
-                id: "",
-                name: "Select a chapter first",
-                code: "",
+      {viewer.role === "CHAPTER_ADMIN" && chapters.length > 0 ? (
+        <Card>
+          <h3 className="text-base font-extrabold text-navy-900">Submit an activity report</h3>
+          <p className="text-[12.5px] text-ink-500">
+            The activity report for {" "}
+            <span className="font-semibold text-navy-900">
+              {chapters[0]?.name ?? "your chapter"}
+            </span>{" "}
+            goes straight to the GLANCE team and the audit trail.
+          </p>
+          <div className="mt-4">
+            <ReportForm
+              chapter={
+                chapters[0] ?? {
+                  id: "",
+                  name: "Select a chapter first",
+                  code: "",
+                }
               }
-            }
-          />
-        </div>
-      </Card>
+            />
+          </div>
+        </Card>
+      ) : viewer.role === "CHAPTER_ADMIN" ? (
+        <Card>
+          <p className="py-4 text-[13px] text-ink-500">
+            Your account is not linked to an activated chapter yet, so there is
+            no report to submit. The GLANCE team connects your account to your
+            chapter when it is activated.
+          </p>
+        </Card>
+      ) : null}
 
       <Card>
         <div className="flex items-start gap-3">

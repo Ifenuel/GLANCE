@@ -258,8 +258,73 @@ export function joinApplicationReceivedEmail(input: {
   };
 }
 
+/** Sent to the chapter's submitted contact email the moment the GLANCE team
+ * activates the chapter, so the coordinator learns they are live. */
+export function chapterActivatedEmail(input: {
+  to: string;
+  name?: string | null;
+  chapterName: string;
+  chapterCode: string;
+}): MailPayload {
+  return {
+    to: input.to,
+    workflow: "glance-chapter-activated",
+    subject: `${input.chapterName} is now live on GLANCE`,
+    heading: "Your chapter is live",
+    body: [
+      input.name ? `Hello ${input.name},` : "Hello,",
+      `Your chapter ${input.chapterName} (${input.chapterCode}) has been activated. Its page is live on the GLANCE website and member invitations can now be issued.`,
+      "Sign in to the portal to keep the chapter record current and file activity reports as your campus meetings happen.",
+    ],
+    action: { label: "Open the GLANCE portal", url: `${process.env.NEXT_PUBLIC_APP_ORIGIN ?? "http://localhost:3000"}/portal/dashboard` },
+    data: { chapter_code: input.chapterCode },
+  };
+}
+
 const SECRETARIAT_INBOX =
   process.env.GLANCE_SECRETARIAT_EMAIL?.trim() || "info@theglanceproject.com";
+
+/** Sent to the new address after the account's email is changed in the portal. */
+export function emailChangedEmail(input: {
+  to: string;
+  name: string | null;
+  staffCode: string | null;
+}): MailPayload {
+  return {
+    to: input.to,
+    workflow: "glance-email-changed",
+    subject: "Your GLANCE email address has been updated",
+    heading: "Your GLANCE email address has been updated",
+    body: [
+      input.name ? `Hello ${input.name},` : "Hello,",
+      `The email address on your GLANCE account is now ${input.to}. This is the address you sign in with from now on.`,
+      input.staffCode
+        ? `Your GLANCE reference is ${input.staffCode}. Keep it — it identifies your record across the platform.`
+        : "No further action is needed — your account is ready to use.",
+      "If this was you, you are all set. If you did not make this change, reply to this message right away so the secretariat can secure your account.",
+    ],
+  };
+}
+
+/** Security notice sent to the previous address after an email change. */
+export function emailChangedNoticeEmail(input: {
+  to: string;
+  name: string | null;
+  newEmail: string;
+}): MailPayload {
+  return {
+    to: input.to,
+    workflow: "glance-email-changed-notice",
+    subject: "Your GLANCE email address was changed",
+    heading: "Your GLANCE email address was changed",
+    body: [
+      input.name ? `Hello ${input.name},` : "Hello,",
+      `The email address on this GLANCE account was changed from ${input.to} to ${input.newEmail}.`,
+      "This message is a security notice — sign-in now happens from the new address.",
+      "If you did not make this change, reply to this message right away so the secretariat can secure your account.",
+    ],
+  };
+}
 
 /** A chapter activity report lands in the secretariat's inbox the moment a
  * chapter administrator submits it. */

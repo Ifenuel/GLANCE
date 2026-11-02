@@ -41,6 +41,20 @@ export async function generateInvitationCode(): Promise<string> {
   throw new Error("Unable to allocate a unique invitation code");
 }
 
+/** GLANCE reference for a staff (non-chapter) account, e.g. GLN-STF-7KQ2MA. */
+export async function generateStaffCode(): Promise<string> {
+  const year = new Date().getFullYear();
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const code = `GLN-STF-${year}-${randomCode(5)}`;
+    const existing = await db.user.findFirst({
+      where: { staffCode: code },
+      select: { id: true },
+    });
+    if (!existing) return code;
+  }
+  throw new Error("Unable to allocate a unique staff reference");
+}
+
 const STOP_WORDS = new Set([
   "of",
   "the",

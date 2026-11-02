@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { Field, FormMessage, SubmitButton } from "@/components/forms/form-parts";
+import { CoverImageUploader } from "./cover-image-uploader";
 import { createPostAction } from "@/server/actions/post";
 import { idleFormState } from "@/server/validation";
 
@@ -56,15 +57,12 @@ export function PostForm() {
         <textarea id="post-body" name="body" rows={8} className={inputClass} required />
       </Field>
 
-      <Field label="Cover image" htmlFor="post-cover"
-        hint="Optional. An https image link for the story card.">
-        <input
-          id="post-cover"
-          name="coverImageUrl"
-          placeholder="https://…"
-          className={inputClass}
-        />
-      </Field>
+      <div className="border-t border-line pt-4">
+        <p className="text-[12.5px] font-semibold text-ink-600">Cover image</p>
+        <div className="mt-2">
+          <CoverImageUploader />
+        </div>
+      </div>
 
       <label className="flex items-center gap-2.5 text-[12.5px] font-semibold text-ink-600">
         <input

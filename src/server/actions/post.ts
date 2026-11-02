@@ -6,6 +6,7 @@ import { db } from "@/server/db";
 import { requireUser } from "@/server/auth";
 import { requestIp, writeAudit } from "@/server/audit";
 import { parseForm, type FormState } from "@/server/validation";
+import { verifyUploadedAsset } from "@/server/cloudinary";
 
 /**
  * News, stories and announcements. Everything published here renders on the
@@ -24,6 +25,7 @@ const postSchema = z.object({
     .max(400),
   body: z.string().trim().min(20, "Write the story itself").max(20000),
   coverImageUrl: z.string().trim().max(600).optional().or(z.literal("")),
+  coverPublicId: z.string().trim().max(200).optional().or(z.literal("")),
   published: z.string().optional(),
 });
 
@@ -70,10 +72,28 @@ export async function createPostAction(
     return { status: "error", error: "Check the highlighted fields.", errors: parsed.errors };
   }
 
-  const { title, category, excerpt, body, coverImageUrl, published } = parsed.data;
+  const { title, category, excerpt, body, coverImageUrl, coverPublicId, published } =
+    parsed.data;
   const isPublished = published === "on";
 
-  if (coverImageUrl && !/^(https:\/\/|\/)/.test(coverImageUrl)) {
+  // Prefer a device upload verified against our Cloudinary account; the URL
+  // field is only kept for records submitted before uploads existed.
+  let cover = coverImageUrl || "";
+  if (coverPublicId) {
+    const asset = await verifyUploadedAsset({
+      publicId: coverPublicId,
+      expectedFolder: "post-cover",
+    });
+    if (!asset) {
+      return {
+        status: "error",
+        error: "The cover image could not be verified. Upload it again.",
+      };
+    }
+    cover = asset.secureUrl;
+  }
+
+  if (cover && !/^(https:\/\/|\/)/.test(cover)) {
     return {
       status: "error",
       error: "The cover image must be an https link or an uploaded image.",
@@ -90,7 +110,7 @@ export async function createPostAction(
         body,
         category,
         status: isPublished ? "PUBLISHED" : "DRAFT",
-        coverImageUrl: coverImageUrl || null,
+        coverImageUrl: cover || null,
         authorId: user.id,
         authorName: user.name,
         publishedAt: isPublished ? new Date() : null,

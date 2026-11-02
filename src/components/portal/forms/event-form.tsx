@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { Field, FormMessage, SubmitButton } from "@/components/forms/form-parts";
+import { VideoUploader } from "@/components/portal/forms/video-uploader";
 import { createEventAction } from "@/server/actions/event";
 import { idleFormState } from "@/server/validation";
 
@@ -97,16 +98,23 @@ export function EventForm() {
       <Field
         label="Teaser video (optional)"
         htmlFor="event-video"
-        hint="A YouTube link. It plays inside the event card on the public page."
+        hint="Upload a video from this device, or paste a YouTube link instead."
         error={state.errors?.videoUrl}
       >
-        <input
-          id="event-video"
-          name="videoUrl"
-          type="url"
-          placeholder="https://www.youtube.com/watch?v=…"
-          className={inputClass}
-        />
+        <div className="space-y-3">
+          <VideoUploader />
+          <input
+            id="event-video"
+            name="videoUrl"
+            type="url"
+            placeholder="https://www.youtube.com/watch?v=…"
+            className={inputClass}
+          />
+          <p className="text-[11px] text-ink-400">
+            An uploaded video is used first; the YouTube link is the fallback when
+            no file is attached.
+          </p>
+        </div>
       </Field>
 
       <label className="flex items-center gap-2.5 text-[12.5px] font-semibold text-ink-600">

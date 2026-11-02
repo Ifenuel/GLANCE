@@ -304,6 +304,7 @@ export async function listUpcomingEvents(limit = 12) {
           location: true,
           registrationUrl: true,
           coverImageUrl: true,
+          videoUrl: true,
           chapter: { select: { name: true, code: true } },
         },
       }),
@@ -335,6 +336,42 @@ export async function listPastEvents(limit = 6) {
         },
       }),
     [],
+  );
+}
+
+export type SiteSections = {
+  events: { intro: string | null; background: string | null };
+  news: { intro: string | null };
+};
+
+/** The editable public sections, one row per field in the SiteContent store. */
+export async function getSiteSections(): Promise<SiteSections> {
+  "use cache";
+  cacheTag("site-content");
+  cacheLife("minutes");
+
+  return safeQuery(
+    "site-sections",
+    async (): Promise<SiteSections> => {
+      const rows = await db.siteContent.findMany({
+        where: { key: { startsWith: "section." } },
+        select: { key: true, value: true },
+      });
+      const byKey = new Map(rows.map((row) => [row.key, row.value]));
+      return {
+        events: {
+          intro: byKey.get("section.events.intro") ?? null,
+          background: byKey.get("section.events.background") ?? null,
+        },
+        news: {
+          intro: byKey.get("section.news.intro") ?? null,
+        },
+      };
+    },
+    {
+      events: { intro: null, background: null },
+      news: { intro: null },
+    },
   );
 }
 

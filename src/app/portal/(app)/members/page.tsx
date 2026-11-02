@@ -298,7 +298,82 @@ export default async function MembersPage({
             </Link>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            {/* Mobile: cards, so every action is reachable without panning a
+                wide table sideways — the same data, stacked. */}
+            <ul className="divide-y divide-line sm:hidden">
+              {members.map((member) => (
+                <li key={member.id} className="px-4 py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <Link
+                        href={`/portal/members/${member.id}`}
+                        className="font-semibold text-navy-900 decoration-gold-400 decoration-2 underline-offset-2 hover:underline"
+                      >
+                        {member.fullName}
+                      </Link>
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-ink-400">
+                        <span className="font-mono font-bold text-navy-800">
+                          {member.memberCode}
+                        </span>
+                        {member.isExecutive ? (
+                          <span className="rounded-full bg-gold-100 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-amber-700">
+                            Exec
+                          </span>
+                        ) : null}
+                        <span>{formatDate(member.registeredAt)}</span>
+                      </p>
+                      <p className="mt-1 truncate text-[12px] text-ink-500">
+                        {member.user.email}
+                      </p>
+                      {member.user.phone ? (
+                        <p className="truncate text-[11px] text-ink-400">
+                          {member.user.phone}
+                        </p>
+                      ) : null}
+                    </div>
+                    <span className="shrink-0 rounded-md bg-navy-950 px-2 py-0.5 font-mono text-[10.5px] font-bold text-gold-300">
+                      {member.chapter?.code ?? "—"}
+                    </span>
+                  </div>
+                  <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[12px] text-ink-500">
+                    <div>
+                      <dt className="sr-only">Academic</dt>
+                      <dd>
+                        {member.academicLevel ? LEVEL_LABEL[member.academicLevel] : "—"}
+                        {member.department ? ` · ${member.department}` : ""}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="sr-only">Position</dt>
+                      <dd>{member.position ?? "Member"}</dd>
+                    </div>
+                    <div className="col-span-2">
+                      <dt className="sr-only">Matric</dt>
+                      <dd>{member.matricNo ? `Matric ${member.matricNo}` : "No matric no"}</dd>
+                    </div>
+                  </dl>
+                  {/* Actions sit directly on the card: no sheet, no scroll. */}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link
+                      href={`/portal/members/${member.id}/id-card`}
+                      className="inline-flex h-9 flex-1 items-center justify-center rounded-lg border border-line bg-white px-3 text-[12px] font-bold text-navy-900 transition-colors hover:bg-navy-50"
+                    >
+                      ID card
+                    </Link>
+                    <Link
+                      href={`/portal/members/${member.id}`}
+                      className="inline-flex h-9 flex-1 items-center justify-center rounded-lg bg-navy-900 px-3 text-[12px] font-bold text-white transition-colors hover:bg-navy-800"
+                    >
+                      Open profile
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* Desktop: the full-width table. */}
+            <div className="hidden overflow-x-auto sm:block">
             <table className="w-full min-w-[860px] text-left text-[13px]">
               <thead>
                 <tr className="border-b border-line text-[10.5px] font-bold uppercase tracking-[0.12em] text-ink-400">
@@ -372,7 +447,8 @@ export default async function MembersPage({
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
 
         {/* Pagination */}

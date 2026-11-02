@@ -8,7 +8,7 @@ import insightCheer from "@/assets/chapter-cheer.jpg";
 import insightLecture from "@/assets/chapter-lecture.jpg";
 import { Container } from "@/components/ui";
 import { formatDate } from "@/lib/format";
-import { listPublishedPostsPaged } from "@/server/content";
+import { getSiteSections, listPublishedPostsPaged } from "@/server/content";
 
 export const metadata: Metadata = {
   title: "News & Updates | GLANCE",
@@ -73,11 +73,14 @@ type NewsCard = {
   content?: string | null;
 };
 
-export default function NewsPage({
+export default async function NewsPage({
   searchParams,
 }: {
   searchParams: Promise<{ tab?: string; page?: string }>;
 }) {
+  // The secretariat's editable intro; empty falls back to the built-in copy.
+  const sections = await getSiteSections();
+
   return (
     <div className="bg-white min-h-screen py-12 lg:py-16">
       <Container>
@@ -90,7 +93,8 @@ export default function NewsPage({
             Latest News
           </h1>
           <p className="mt-2 text-xs text-ink-500">
-            Stay informed with our latest stories, events, and announcements from across our national footprint.
+            {sections.news.intro ??
+              "Stay informed with our latest stories, events, and announcements from across our national footprint."}
           </p>
         </div>
 

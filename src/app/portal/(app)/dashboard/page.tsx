@@ -472,7 +472,7 @@ export default async function DashboardPage() {
           <Kpi label="Active members" value={formatNumber(activeMembers)} hint="On your roster" href="/portal/members" />
           <Kpi label="Reports filed" value={formatNumber(reports)} hint="Activity on record" href="/portal/reports" />
           <Kpi label="Pending invites" value={formatNumber(pendingInvites)} hint="Awaiting activation" href="/portal/invitations" />
-          <Kpi label="Chapter events" value={formatNumber(chapter?._count.events ?? 0)} hint="For your campus" href="/portal/events" />
+          <Kpi label="Chapter events" value={formatNumber(chapter?._count.events ?? 0)} hint="Held on your campus" href="/portal/chapter" />
         </div>
 
         <div className="grid gap-5 xl:grid-cols-[1.1fr_1fr]">

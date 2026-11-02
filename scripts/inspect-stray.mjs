@@ -1,0 +1,11 @@
+import { makeClient } from "./db-shell.mjs";
+const p = makeClient();
+const posts = await p.post.findMany({ select: { id: true, title: true, authorName: true, createdAt: true }, orderBy: { createdAt: "desc" } });
+console.log(JSON.stringify(posts, null, 1));
+const app = await p.chapterApplication.findFirst({ where: { reviewedById: { not: null } }, select: { id: true, institution: true, reviewedBy: { select: { email: true } } } });
+console.log(JSON.stringify(app));
+const users = await p.user.findMany({ select: { email: true, name: true, role: true, chapterId: true } });
+console.log(JSON.stringify(users, null, 1));
+const sessions = await p.session.findMany({ select: { id: true, userId: true, expiresAt: true } });
+console.log(JSON.stringify(sessions));
+await p.$disconnect();

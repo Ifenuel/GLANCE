@@ -13,7 +13,8 @@ export function PageHeader({
   intro,
   actions,
   aside,
-  /** Optional photographic background behind the deep-navy wash. */
+  /** Optional photographic background behind the deep-navy wash. An uploaded
+   * https URL (a secretariat-chosen image) works beside bundled stills. */
   background,
   backgroundAlt,
 }: {
@@ -22,7 +23,7 @@ export function PageHeader({
   intro?: ReactNode;
   actions?: ReactNode;
   aside?: ReactNode;
-  background?: StaticImageData;
+  background?: StaticImageData | string;
   backgroundAlt?: string;
 }) {
   return (

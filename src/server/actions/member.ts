@@ -7,6 +7,12 @@ import { requireUser } from "@/server/auth";
 import { requestIp, writeAudit } from "@/server/audit";
 import { verifyUploadedAsset } from "@/server/cloudinary";
 import { accountSchema, parseForm, profileSchema, type FormState } from "@/server/validation";
+import {
+  sendTransactionalEmail,
+  emailChangedEmail,
+  emailChangedNoticeEmail,
+} from "@/server/email";
+import { generateStaffCode } from "@/server/ids";
 
 /**
  * Name, email, phone and, for staff accounts created by invitation, the
@@ -73,7 +79,15 @@ export async function updateAccountAction(
     }
   }
 
-  await db.user.update({
+  // Staff accounts (GLANCE team, communications, secretariat) are not chapter
+  // members, so they carry their GLANCE reference on the account itself. It is
+  // minted once, at first completion — or on this very save — never again.
+  let staffCode = user.staffCode;
+  if (!staffCode && (user.role === "SUPER_ADMIN" || user.role === "AGID_ADMIN" || user.role === "COMM_MANAGER")) {
+    staffCode = await generateStaffCode();
+  }
+
+  const result = await db.user.update({
     where: { id: user.id },
     data: {
       name: data.name,
@@ -84,8 +98,40 @@ export async function updateAccountAction(
       academicLevel: data.academicLevel || user.academicLevel || null,
       position: data.position || user.position || null,
       profileCompletedAt: user.profileCompletedAt ?? new Date(),
+      staffCode,
     },
   });
+
+  // The user should never be left wondering whether a mail went out: the
+  // change is confirmed to the new address — and the old one gets a security
+  // notice — with an explicit delivery outcome reported back into the form.
+  let confirmations = "";
+  if (emailChanged) {
+    const [toNew, toOld] = await Promise.all([
+      sendTransactionalEmail(
+        emailChangedEmail({
+          to: data.email,
+          name: result.name,
+          staffCode: result.staffCode,
+        }),
+      ),
+      sendTransactionalEmail(
+        emailChangedNoticeEmail({
+          to: user.email,
+          name: result.name,
+          newEmail: result.email,
+        }),
+      ),
+    ]);
+    confirmations =
+      toNew.delivered && toOld.delivered
+        ? ` A confirmation email was sent to ${result.email} and a security notice to your previous address.`
+        : toNew.delivered
+          ? ` A confirmation email was sent to ${result.email}; the notice to your previous address could not be delivered.`
+          : toOld.delivered
+            ? ` A security notice was sent to your previous address; the confirmation to ${result.email} could not be delivered.`
+            : " Email delivery is not configured in this environment, so no confirmation email was sent.";
+  }
 
   if (user.profile) {
     await db.memberProfile.update({
@@ -114,8 +160,22 @@ export async function updateAccountAction(
 
   return {
     status: "success",
-    message: completing ? "Your profile is complete. The portal is open." : "Account details updated.",
-    success: completing ? "Your profile is complete. The portal is open." : "Account details updated.",
+    message:
+      (completing
+        ? "Your profile is complete. The portal is open."
+        : "Account details updated.") +
+      (staffCode && !user.staffCode
+        ? ` Your GLANCE reference is ${result.staffCode}.`
+        : "") +
+      confirmations,
+    success:
+      (completing
+        ? "Your profile is complete. The portal is open."
+        : "Account details updated.") +
+      (staffCode && !user.staffCode
+        ? ` Your GLANCE reference is ${result.staffCode}.`
+        : "") +
+      confirmations,
   };
 }
 

@@ -1,6 +1,7 @@
 import { db } from "@/server/db";
 import { getCurrentUser } from "@/server/auth";
 import { auditEntry } from "@/server/audit";
+import { ButtonLink } from "@/components/button-link";
 import {
     Card,
     CardTitle,
@@ -55,6 +56,9 @@ export default async function ChapterDetailPage({
       (viewer.role === "CHAPTER_ADMIN" && viewer.chapterId === chapter.id));
   if (!mayView) return <div>Chapter not found.</div>;
 
+  const isOfficer = viewer!.role === "SUPER_ADMIN" || viewer!.role === "AGID_ADMIN";
+  const isChapterAdmin = viewer!.role === "CHAPTER_ADMIN";
+
   const memberCounts = await db.memberProfile.count({
     where: { chapterId: chapter.id, status: "ACTIVE" },
   });
@@ -68,16 +72,36 @@ export default async function ChapterDetailPage({
           ? "Suspended"
           : "Deactivated";
 
-  const entries = await auditEntry({ limit: 4 });
+  // The audit trail is an officer instrument: a chapter administrator only
+  // ever sees the entries that concern their own chapter.
+  const entries = await auditEntry({
+    limit: 4,
+    where: isOfficer
+      ? {}
+      : { entityType: "Chapter", entityId: chapter.id },
+  });
+
+  // The chapter's own activity reports, so the coordinator reviews and files
+  // them from the chapter desk without opening the reports page first.
+  const recentReports = isChapterAdmin
+    ? await db.activityReport.findMany({
+        where: { chapterId: chapter.id },
+        orderBy: { activityDate: "desc" },
+        take: 5,
+        select: { id: true, title: true, activityDate: true, attendeeCount: true },
+      })
+    : [];
 
   return (
     <div className="space-y-8">
-      <Link
-        href="/portal/chapters"
-        className="text-[12.5px] font-semibold text-navy-900 hover:underline underline-offset-4 decoration-gold-400 decoration-2"
-      >
-        ← Chapters
-      </Link>
+      {isOfficer ? (
+        <Link
+          href="/portal/chapters"
+          className="text-[12.5px] font-semibold text-navy-900 hover:underline underline-offset-4 decoration-gold-400 decoration-2"
+        >
+          ← Chapters
+        </Link>
+      ) : null}
 
       <Card className="border-0 bg-navy-900 p-6">
         <div className="flex flex-wrap items-start justify-between gap-6">
@@ -143,23 +167,29 @@ export default async function ChapterDetailPage({
           >
             View members ({memberCounts})
           </a>
-          <a
-            href={`/portal/chapters/${id}/status`}
-            className="inline-flex h-11 items-center justify-center rounded-lg border border-white/30 px-5 text-[13px] font-bold text-white transition-colors hover:border-white hover:bg-white/10"
-          >
-            Change status
-          </a>
-          <a
-            href={`/portal/chapters/${id}/invite`}
-            className="inline-flex h-11 items-center justify-center rounded-lg border border-white/30 px-5 text-[13px] font-bold text-white transition-colors hover:border-white hover:bg-white/10"
-          >
-            Create administrator invite
-          </a>
+          {/* Status changes and administrator invites are officer tools; the
+              chapter administrator works only inside their own chapter. */}
+          {isOfficer ? (
+            <a
+              href={`/portal/chapters/${id}/status`}
+              className="inline-flex h-11 items-center justify-center rounded-lg border border-white/30 px-5 text-[13px] font-bold text-white transition-colors hover:border-white hover:bg-white/10"
+            >
+              Change status
+            </a>
+          ) : null}
+          {isOfficer ? (
+            <a
+              href={`/portal/chapters/${id}/invite`}
+              className="inline-flex h-11 items-center justify-center rounded-lg border border-white/30 px-5 text-[13px] font-bold text-white transition-colors hover:border-white hover:bg-white/10"
+            >
+              Create administrator invite
+            </a>
+          ) : null}
         </div>
 
         <div className="mt-6 border-t border-white/10 pt-6">
           <h4 className="text-[12px] font-bold uppercase tracking-[0.1em] text-ink-400">
-            Recent audit entries
+            {isOfficer ? "Recent audit entries" : "This chapter's recent activity"}
           </h4>
           <dl className="mt-3 grid gap-2 text-[12.5px]">
             {entries.map((entry) => (
@@ -177,6 +207,40 @@ export default async function ChapterDetailPage({
           </dl>
         </div>
       </Card>
+
+      {isChapterAdmin ? (
+        <Card>
+          <h3 className="text-base font-extrabold text-navy-900">Activity reports</h3>
+          <p className="mt-1 text-[12.5px] text-ink-500">
+            Every report filed for {chapter.name} lives here and goes straight
+            to the GLANCE team.
+          </p>
+          {recentReports.length === 0 ? (
+            <p className="py-8 text-center text-[12.5px] text-ink-500">
+              No activity report yet. Submit the first one below.
+            </p>
+          ) : (
+            <ul className="mt-4 divide-y divide-line">
+              {recentReports.map((report) => (
+                <li key={report.id} className="flex items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-bold text-navy-900">{report.title}</p>
+                    <p className="text-[11.5px] text-ink-400">{formatDate(report.activityDate)}</p>
+                  </div>
+                  <p className="shrink-0 text-[11.5px] font-semibold text-ink-500">
+                    {report.attendeeCount ?? 0} attendees
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="mt-4 border-t border-line pt-4">
+            <ButtonLink href="/portal/reports" variant="navy">
+              Submit or review reports
+            </ButtonLink>
+          </div>
+        </Card>
+      ) : null}
 
       <Card>
         <UpdateChapterForm

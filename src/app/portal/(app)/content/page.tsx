@@ -5,6 +5,8 @@ import { db } from "@/server/db";
 import { Card } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { PostForm } from "@/components/portal/forms/post-form";
+import { SiteSectionsForm } from "@/components/portal/forms/site-sections-form";
+import { getSiteSections } from "@/server/content";
 import {
   deletePostAction,
   setPostPublishedAction,
@@ -150,6 +152,34 @@ export default async function ContentCmsPage() {
           )}
         </Card>
       </div>
+
+      <SiteSectionsCard />
     </div>
+  );
+}
+
+async function SiteSectionsCard() {
+  const sections = await getSiteSections();
+
+  return (
+    <Card className="min-w-0">
+      <h3 className="border-b border-line pb-3 text-sm font-extrabold text-navy-950">
+        Site sections
+      </h3>
+      <p className="mt-2 text-[12.5px] leading-[1.7] text-ink-500">
+        Edit the intro copy and header photograph of the public events page and
+        the intro of the news page. Intros left empty fall back to the built-in
+        copy; a photograph uploads straight from this device.
+      </p>
+      <div className="mt-5">
+        <SiteSectionsForm
+          initial={{
+            eventsIntro: sections.events.intro ?? "",
+            eventsBackground: sections.events.background ?? "",
+            newsIntro: sections.news.intro ?? "",
+          }}
+        />
+      </div>
+    </Card>
   );
 }

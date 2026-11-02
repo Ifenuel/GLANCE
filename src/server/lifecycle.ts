@@ -5,7 +5,11 @@ import { db } from "./db";
 import { writeAudit } from "./audit";
 import { validateEmail } from "./validation";
 import { generateInvitationCode, generateChapterCode } from "./ids";
-import { sendTransactionalEmail, invitationEmail } from "./email";
+import {
+  sendTransactionalEmail,
+  invitationEmail,
+  chapterActivatedEmail,
+} from "./email";
 
 export type Actor = { id: string; role: string };
 
@@ -181,7 +185,14 @@ export async function setChapterStatus(params: {
 }) {
   const chapter = await db.chapter.findUnique({
     where: { id: params.chapterId },
-    select: { id: true, code: true, name: true, status: true, activatedAt: true },
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      status: true,
+      activatedAt: true,
+      contactEmail: true,
+    },
   });
   if (!chapter) throw new Error("Chapter not found.");
   if (chapter.status === params.status) {
@@ -197,6 +208,25 @@ export async function setChapterStatus(params: {
     },
   });
 
+  // Activation reaches the coordinator: the chapter's submitted contact email
+  // gets a delivery. Delivery failure never blocks the activation itself.
+  let delivered: boolean | null = null;
+  if (params.status === "ACTIVE" && chapter.contactEmail) {
+    const contactProfile = await db.user.findUnique({
+      where: { email: chapter.contactEmail },
+      select: { name: true, role: true },
+    });
+    const mail = await sendTransactionalEmail(
+      chapterActivatedEmail({
+        to: chapter.contactEmail,
+        name: contactProfile?.name ?? null,
+        chapterName: chapter.name,
+        chapterCode: chapter.code,
+      }),
+    );
+    delivered = mail.delivered;
+  }
+
   await writeAudit({
     actorId: params.actor.id,
     actorRole: params.actor.role,
@@ -209,6 +239,7 @@ export async function setChapterStatus(params: {
       name: chapter.name,
       from: chapter.status,
       to: params.status,
+      ...(delivered === null ? {} : { activationEmailDelivered: delivered }),
     },
   });
 

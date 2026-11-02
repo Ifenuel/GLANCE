@@ -7,6 +7,10 @@ import { db } from "@/server/db";
 import { requireRole } from "@/server/auth";
 import { requestIp, writeAudit } from "@/server/audit";
 import { parseForm, type FormState } from "@/server/validation";
+import { verifyUploadedAsset } from "@/server/cloudinary";
+
+/** Folder every event-video upload must live in (relative to the upload root). */
+const EVENT_VIDEO_FOLDER = "event-video";
 
 /**
  * Upcoming-event publishing for the secretariat (GLANCE Network Officers and
@@ -51,6 +55,7 @@ const eventSchema = z.object({
   endsAt: z.string().optional().or(z.literal("")),
   registrationUrl: z.string().trim().max(600).optional().or(z.literal("")),
   videoUrl: z.string().trim().max(600).optional().or(z.literal("")),
+  videoPublicId: z.string().trim().max(300).optional().or(z.literal("")),
   publish: z.string().optional(),
 });
 
@@ -74,8 +79,17 @@ export async function createEventAction(
     return { status: "error", error: "Check the highlighted fields.", errors: parsed.errors };
   }
 
-  const { title, description, location, startsAt, endsAt, registrationUrl, videoUrl, publish } =
-    parsed.data;
+  const {
+    title,
+    description,
+    location,
+    startsAt,
+    endsAt,
+    registrationUrl,
+    videoUrl: rawVideoUrl,
+    videoPublicId,
+    publish,
+  } = parsed.data;
 
   const start = new Date(startsAt);
   if (Number.isNaN(start.getTime())) {
@@ -94,15 +108,32 @@ export async function createEventAction(
     return { status: "error", error: "The registration link must be a full https:// URL." };
   }
 
-  let videoId: string | null = null;
-  if (videoUrl) {
-    videoId = youtubeId(videoUrl);
+  // A device upload is verified against our Cloudinary account before any
+  // reference is stored; a pasted video link is still only ever a YouTube one.
+  let videoToStore: string | null = null;
+  if (videoPublicId) {
+    const verified = await verifyUploadedAsset({
+      publicId: videoPublicId,
+      expectedFolder: EVENT_VIDEO_FOLDER,
+      kind: "video",
+    });
+    if (!verified) {
+      return {
+        status: "error",
+        error: "The uploaded video could not be verified on the media server. Try again.",
+      };
+    }
+    // Verified on the media server, so its stable secure URL is safe to store.
+    videoToStore = verified.secureUrl;
+  } else if (rawVideoUrl) {
+    const videoId = youtubeId(rawVideoUrl);
     if (!videoId) {
       return {
         status: "error",
-        error: "Paste a YouTube link for the event video, or leave it blank.",
+        error: "Paste a YouTube link or upload a video file from this device.",
       };
     }
+    videoToStore = `https://www.youtube.com/watch?v=${videoId}`;
   }
 
   try {
@@ -115,7 +146,7 @@ export async function createEventAction(
         startsAt: start,
         endsAt: end,
         registrationUrl: registrationUrl || null,
-        videoUrl: videoId ? `https://www.youtube.com/watch?v=${videoId}` : null,
+        videoUrl: videoToStore,
         coverImageUrl: null,
         status: publish === "on" ? "PUBLISHED" : "DRAFT",
       },

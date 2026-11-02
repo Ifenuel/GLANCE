@@ -28,6 +28,8 @@ model User {
   avatarUrl          String?
   avatarPublicId     String?
   profileCompletedAt DateTime?
+  /** Staff reference issued at first profile completion, e.g. GLN-STF-XXXXXX. */
+  staffCode          String?           @unique
   reports            ActivityReport[]
   auditLogs          AuditLog[]
   acceptedInvite     Invitation?      @relation("AcceptedBy")

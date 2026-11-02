@@ -37,18 +37,24 @@ export type UploadSignature = {
   maxBytes: number;
 };
 
-const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+/** Generous video allowance: a 60-second teaser at 720p fits comfortably. */
+const MAX_VIDEO_BYTES = 64 * 1024 * 1024;
 
 /**
  * Builds a short-lived signature for a browser upload. The folder and public ID
  * are always derived on the server so a client cannot write outside its scope.
+ * Video uploads go to Cloudinary's video endpoint and get a much larger byte
+ * allowance than pictures.
  */
 export function buildUploadSignature(input: {
-  scope: "chapter-logo" | "member-avatar" | "post-cover" | "gallery-media";
+  scope: "chapter-logo" | "member-avatar" | "post-cover" | "gallery-media" | "event-video";
   ownerKey: string;
+  kind?: "image" | "video";
 }): UploadSignature | null {
   if (!ensureConfigured()) return null;
 
+  const isVideo = input.kind === "video";
   const baseFolder = process.env.CLOUDINARY_UPLOAD_FOLDER || "glance";
   const folder = `${baseFolder}/${input.scope}`;
   const timestamp = Math.floor(Date.now() / 1000);
@@ -66,8 +72,10 @@ export function buildUploadSignature(input: {
     folder,
     publicId,
     signature,
-    uploadUrl: `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`,
-    maxBytes: MAX_UPLOAD_BYTES,
+    uploadUrl: `https://api.cloudinary.com/v1_1/${
+      process.env.CLOUDINARY_CLOUD_NAME
+    }/${isVideo ? "video" : "image"}/upload`,
+    maxBytes: isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES,
   };
 }
 
@@ -89,6 +97,7 @@ export type VerifiedAsset = {
 export async function verifyUploadedAsset(input: {
   publicId: string;
   expectedFolder: string;
+  kind?: "image" | "video";
 }): Promise<VerifiedAsset | null> {
   if (!ensureConfigured()) return null;
 
@@ -97,7 +106,9 @@ export async function verifyUploadedAsset(input: {
   if (!input.publicId.startsWith(`${expected}/`)) return null;
 
   try {
-    const resource = await cloudinary.api.resource(input.publicId);
+    const resource = await cloudinary.api.resource(input.publicId, {
+      resource_type: input.kind === "video" ? "video" : "image",
+    });
     return {
       publicId: resource.public_id,
       assetId: resource.asset_id ?? null,
@@ -124,10 +135,23 @@ export function deliveryUrl(
   return `https://res.cloudinary.com/${cloudName}/image/upload/${transformation}/${publicId}`;
 }
 
-export async function deleteAsset(publicId: string) {
+/** Direct delivery URL for a video asset; no blur would look right on a face. */
+export function videoDeliveryUrl(
+  publicId: string | null | undefined,
+): string | null {
+  if (!publicId) return null;
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  if (!cloudName) return null;
+  return `https://res.cloudinary.com/${cloudName}/video/upload/q_auto,f_auto/${publicId}`;
+}
+
+export async function deleteAsset(publicId: string, kind?: "image" | "video") {
   if (!ensureConfigured()) return false;
   try {
-    await cloudinary.uploader.destroy(publicId, { invalidate: true });
+    await cloudinary.uploader.destroy(publicId, {
+      invalidate: true,
+      resource_type: kind === "video" ? "video" : "image",
+    });
     return true;
   } catch {
     return false;

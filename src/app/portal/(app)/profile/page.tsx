@@ -37,7 +37,7 @@ export default async function ProfilePage() {
     user.role === "CHAPTER_ADMIN";
   const completing = staffRole && !user.profileCompletedAt;
   const avatarUrl = user.profile?.avatarUrl ?? user.avatarUrl;
-  const memberCode = user.profile?.memberCode ?? null;
+  const memberCode = user.profile?.memberCode ?? user.staffCode ?? null;
   const profileFields = [
     ["Full name", user.name],
     ["Email", user.email],
@@ -84,7 +84,7 @@ export default async function ProfilePage() {
             </div>
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">
-                Member ID
+                {user.profile ? "Member ID" : "GLANCE ID"}
               </dt>
               <dd className="mt-0.5 font-mono text-[15px] font-bold text-gold-300">
                 {memberCode ?? "—"}

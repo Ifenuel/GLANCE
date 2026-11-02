@@ -4,6 +4,7 @@ import { GlanceLogo } from "@/components/glance-logo";
 import { MailIcon } from "@/components/icons";
 import { brand } from "@/lib/glance";
 import { footerColumns, socialLinks } from "@/lib/nav";
+import { AnalyticsConsentToggle } from "@/components/site/analytics-consent-toggle";
 
 /**
  * A calm, compact footer: the gold conversion band, then one quiet dark
@@ -95,6 +96,7 @@ export function SiteFooter() {
                 Terms of Use
               </Link>
               <span className="h-3 w-px bg-white/20" aria-hidden="true" />
+              <AnalyticsConsentToggle />
               {socialLinks.map((social, index) => (
                 <span key={social.label} className="inline-flex items-center gap-3">
                   {index > 0 ? (

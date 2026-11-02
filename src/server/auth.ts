@@ -77,6 +77,7 @@ export const sessionUserSelect = {
   avatarPublicId: true,
   profileCompletedAt: true,
   chapterId: true,
+  staffCode: true,
   lastLoginAt: true,
   chapter: {
     select: { id: true, code: true, name: true, institution: true, status: true },
