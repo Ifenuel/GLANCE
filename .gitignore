@@ -74,3 +74,6 @@ pgstart.err
 next-env.d.ts
 
 /src/generated/prisma
+
+# freebuff chat attachments (session screenshots saved into the workspace)
+/.cloud-attachments/
