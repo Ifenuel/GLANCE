@@ -328,7 +328,10 @@ export function CinematicIntro() {
 
   if (!active) return null;
 
-  const radius = streetWidth(300) / 2 / Math.tan(Math.PI / HEX);
+  // A hexagon whose circumradius keeps the projected building inside a
+  // readable column on every viewport (GSAP rotates in transforms; the
+  // vertical anchor lives in `top`, which GSAP never touches).
+  const radius = streetWidth(190) / 2 / Math.tan(Math.PI / HEX);
 
   return (
     <div
@@ -418,23 +421,27 @@ export function CinematicIntro() {
               grab it anywhere on the stone apron and walk it round 360°. */}
           <div
             data-grab
-            className="absolute inset-x-0 bottom-[14vh] top-[22vh] cursor-grab touch-none select-none"
+            className="absolute inset-x-0 bottom-[17vh] top-[24vh] cursor-grab touch-none select-none"
           >
-            {/* The institution's rooftop billboard: deliberately outside the
-                3D scene, so "GLANCE" is always crisp and readable no matter
-                how the building turns. */}
+            {/* A screen-space wrapper: the whole scene scales down on small
+                viewports so the building never floods the screen. */}
+            <div data-house-wrap className="absolute inset-0">
+            {/* The institution's rooftop billboard: outside the 3D scene, so
+                "GLANCE" is always crisp and readable no matter how the
+                building turns. It is anchored with the same height formula as
+                the house, so it always hangs on the roof's edge. */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 top-[3%] flex -translate-x-1/2 items-center rounded-md border border-gold-400/45 bg-navy-950/85 px-5 py-1.5 shadow-[0_14px_34px_-20px_rgba(234,174,20,0.7)]"
+              className="pointer-events-none absolute left-1/2 top-[calc(50%_-_min(62vw,400px)_*_0.54_-_14px)] z-[2] flex -translate-y-full -translate-x-1/2 items-center whitespace-nowrap rounded-md border border-gold-400/45 bg-navy-950/90 px-4 py-1.5 shadow-[0_14px_34px_-20px_rgba(234,174,20,0.7)] sm:px-5"
             >
-              <span className="text-[15px] font-extrabold tracking-[0.42em] text-gold-400 uppercase">
+              <span className="text-[13px] font-extrabold tracking-[0.3em] text-gold-400 uppercase sm:text-[15px] sm:tracking-[0.4em]">
                 GLANCE
               </span>
               <span
                 aria-hidden="true"
-                className="ml-3 h-3.5 w-px bg-gold-400/50"
+                className="mx-2 hidden h-3.5 w-px bg-gold-400/50 sm:mx-3 sm:block"
               />
-              <span className="ml-3 text-[10px] font-bold tracking-[0.3em] text-white/60 uppercase">
+              <span className="hidden text-[10px] font-bold tracking-[0.26em] text-white/60 uppercase sm:block">
                 House of the movement
               </span>
             </div>
@@ -442,7 +449,7 @@ export function CinematicIntro() {
             <div className="absolute inset-0" style={{ perspective: "1300px", perspectiveOrigin: "50% 44%" }}>
               <div
                 data-house
-                className="absolute left-1/2 top-1/2 h-[min(62vw,400px)] w-[min(54vw,340px)] -translate-x-1/2 -translate-y-[54%]"
+                className="absolute left-1/2 top-[calc(50%_-_min(62vw,400px)_*_0.54)] h-[min(62vw,400px)] w-[min(54vw,340px)] -translate-x-1/2"
                 style={{
                   transformStyle: "preserve-3d",
                   visibility: "hidden",
@@ -500,19 +507,20 @@ export function CinematicIntro() {
                 </div>
               </div>
             </div>
+            </div>
           </div>
+        </div>
 
+        {/* Enter: rises after the house settles and stays until dismissed.
+            The drag hint lives in the same column so the two never collide. */}
+        <div className="absolute inset-x-0 bottom-[2.5vh] flex flex-col items-center gap-2.5">
           <p
             data-hint
-            className="absolute inset-x-0 bottom-[8.5vh] text-center text-[10.5px] font-bold tracking-[0.28em] text-white/45 uppercase"
+            className="text-[10.5px] font-bold tracking-[0.28em] text-white/45 uppercase"
             style={{ opacity: 0 }}
           >
             Drag the building · turn it full circle
           </p>
-        </div>
-
-        {/* Enter: rises after the house settles and stays until dismissed */}
-        <div className="absolute inset-x-0 bottom-[3vh] flex flex-col items-center gap-3">
           <button
             type="button"
             onClick={dismiss}
@@ -637,5 +645,12 @@ const STAGE_CSS = `
 }
 @media (prefers-reduced-motion: reduce) {
   .fx-glass { animation: none !important; }
+}
+[data-house-wrap] { transform-origin: 50% 58%; }
+@media (min-width: 1100px) {
+  [data-house-wrap] { transform: scale(1.12); }
+}
+@media (max-width: 1000px) {
+  [data-house-wrap] { transform: scale(0.82); }
 }
 `;
