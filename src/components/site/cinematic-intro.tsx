@@ -432,7 +432,7 @@ export function CinematicIntro() {
                 the house, so it always hangs on the roof's edge. */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 top-[calc(50%_-_min(62vw,400px)_*_0.54_-_14px)] z-[2] flex -translate-y-full -translate-x-1/2 items-center whitespace-nowrap rounded-md border border-gold-400/45 bg-navy-950/90 px-4 py-1.5 shadow-[0_14px_34px_-20px_rgba(234,174,20,0.7)] sm:px-5"
+              className="pointer-events-none absolute left-1/2 top-[calc(50%_-_min(62vw,400px)_*_0.34_-_14px)] z-[2] flex -translate-y-full -translate-x-1/2 items-center whitespace-nowrap rounded-md border border-gold-400/45 bg-navy-950/90 px-4 py-1.5 shadow-[0_14px_34px_-20px_rgba(234,174,20,0.7)] sm:px-5"
             >
               <span className="text-[13px] font-extrabold tracking-[0.3em] text-gold-400 uppercase sm:text-[15px] sm:tracking-[0.4em]">
                 GLANCE
@@ -449,7 +449,7 @@ export function CinematicIntro() {
             <div className="absolute inset-0" style={{ perspective: "1300px", perspectiveOrigin: "50% 44%" }}>
               <div
                 data-house
-                className="absolute left-1/2 top-[calc(50%_-_min(62vw,400px)_*_0.54)] h-[min(62vw,400px)] w-[min(54vw,340px)] -translate-x-1/2"
+                className="absolute left-1/2 top-[calc(50%_-_min(62vw,400px)_*_0.34)] h-[min(62vw,400px)] w-[min(54vw,340px)] -translate-x-1/2"
                 style={{
                   transformStyle: "preserve-3d",
                   visibility: "hidden",
