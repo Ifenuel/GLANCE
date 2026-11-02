@@ -295,6 +295,28 @@ export function DirectMemberForm({
         avatar photo is uploaded.
       </div>
 
+      <Field
+        label="Consent to data processing"
+        htmlFor="consent"
+        required
+        error={state.errors?.consent?.[0]}
+      >
+        <div className="flex items-start gap-3 text-[13.5px] leading-6 text-ink-600">
+          <input
+            id="consent"
+            name="consent"
+            type="checkbox"
+            required
+            className="mt-0.5 h-4 w-4 rounded border-line text-navy-900 focus:ring-navy-500"
+          />
+          <p>
+            I consent to GLANCE storing and processing the personal information
+            in this record for membership administration, and I confirm the
+            member has agreed to their details being held this way.
+          </p>
+        </div>
+      </Field>
+
       <div className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center">
         <input type="hidden" name="submitIntent" value="save" />
         <SubmitButton

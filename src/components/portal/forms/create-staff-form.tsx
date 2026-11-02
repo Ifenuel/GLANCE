@@ -90,6 +90,27 @@ export function CreateStaffForm() {
         />
       </Field>
 
+      <Field
+        label="Permission to create the account"
+        htmlFor="consent"
+        required
+        error={state.errors?.consent}
+      >
+        <div className="flex items-start gap-3 text-[13.5px] leading-6 text-ink-600">
+          <input
+            id="consent"
+            name="consent"
+            type="checkbox"
+            required
+            className="mt-0.5 h-4 w-4 rounded border-line text-navy-900 focus:ring-navy-500"
+          />
+          <p>
+            I confirm this person has agreed to GLANCE holding their name and
+            email address to create this account.
+          </p>
+        </div>
+      </Field>
+
       <SubmitButton pendingLabel="Creating staff account…">
         Create staff account
       </SubmitButton>

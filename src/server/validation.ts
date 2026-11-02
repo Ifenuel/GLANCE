@@ -97,6 +97,9 @@ export const contactSchema = z.object({
   email,
   subject: z.string().trim().min(3, "Enter a subject").max(160),
   message: z.string().trim().min(20, "Enter at least 20 characters").max(4000),
+  consent: z.literal("on", {
+    message: "Consent is required before sending your details",
+  }),
 });
 
 export const invitationSchema = z.object({
@@ -104,6 +107,9 @@ export const invitationSchema = z.object({
   role: z.enum(["SUPER_ADMIN", "AGID_ADMIN", "CHAPTER_ADMIN", "COMM_MANAGER", "MEMBER"]),
   chapterId: z.string().trim().min(1, "Select a chapter").optional().or(z.literal("")),
   name: z.string().trim().max(120).optional().or(z.literal("")),
+  consent: z.literal("on", {
+    message: "Confirm you have permission to share this person's details",
+  }),
 });
 
 export const activateSchema = z

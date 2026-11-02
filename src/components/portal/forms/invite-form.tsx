@@ -87,6 +87,27 @@ export function InviteForm({
         </Field>
       ) : null}
 
+      <Field
+        label="Permission to share details"
+        htmlFor="consent"
+        required
+        error={state.errors?.consent}
+      >
+        <div className="flex items-start gap-3 text-[13.5px] leading-6 text-ink-600">
+          <input
+            id="consent"
+            name="consent"
+            type="checkbox"
+            required
+            className="mt-0.5 h-4 w-4 rounded border-line text-navy-900 focus:ring-navy-500"
+          />
+          <p>
+            I confirm I have this person&apos;s permission to share their name
+            and email address with GLANCE for this invitation.
+          </p>
+        </div>
+      </Field>
+
       <SubmitButton pendingLabel="Issuing invite…">
         Issue invite
       </SubmitButton>

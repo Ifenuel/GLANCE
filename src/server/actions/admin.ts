@@ -579,6 +579,17 @@ export async function createStaffAccountAction(
   const name = String(formData.get("name") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const roleInput = String(formData.get("role") ?? "");
+
+  // Consent is mandatory before another person's details are stored, whatever
+  // the browser was asked for.
+  if (formData.get("consent") !== "on") {
+    return {
+      status: "error",
+      message: "Confirm you have permission to create this account.",
+      errors: { consent: ["Confirm you have permission to create this account"] },
+    };
+  }
+
   if (roleInput !== "AGID_ADMIN" && roleInput !== "COMM_MANAGER") {
     return { status: "error", message: "Select which staff role to create." };
   }

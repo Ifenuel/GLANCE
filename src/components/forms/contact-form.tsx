@@ -52,6 +52,28 @@ export function ContactForm() {
         <TextArea id="message" name="message" rows={6} required maxLength={4000} />
       </Field>
 
+      <Field
+        label="Consent to data processing"
+        htmlFor="consent"
+        required
+        error={errors.consent?.[0]}
+      >
+        <div className="flex items-start gap-3 text-[13.5px] leading-6 text-ink-600">
+          <input
+            id="consent"
+            name="consent"
+            type="checkbox"
+            required
+            className="mt-0.5 h-4 w-4 rounded border-line text-navy-900 focus:ring-navy-500"
+          />
+          <p>
+            I consent to GLANCE storing and processing the details I have
+            provided so the secretariat can respond to my message, as described
+            in the Privacy Policy.
+          </p>
+        </div>
+      </Field>
+
       <SubmitButton pendingLabel="Sending…">Send message</SubmitButton>
     </form>
   );

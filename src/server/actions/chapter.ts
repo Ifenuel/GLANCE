@@ -183,6 +183,16 @@ export async function registerChapterMemberAction(
   const department = String(formData.get("department") ?? "").trim();
   const academicLevel = String(formData.get("academicLevel") ?? "").trim();
 
+  // Consent is mandatory before anyone else's details are stored, whatever
+  // the browser was asked for.
+  if (formData.get("consent") !== "on") {
+    return {
+      status: "error",
+      message: "Consent is required before creating this member record.",
+      errors: { consent: ["Consent is required before creating this member record"] },
+    };
+  }
+
   if (!email || !fullName) {
     return { status: "error", message: "Full name and email are required." };
   }

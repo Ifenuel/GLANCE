@@ -191,8 +191,11 @@ export async function submitContactMessageAction(
     return { status: "error", message: "Please correct the highlighted fields.", errors: parsed.errors };
   }
 
+  // `consent` was required by the schema above but is not a stored column;
+  // the acceptance itself is recorded in the audit trail below.
+  const { consent: _consent, ...messageData } = parsed.data;
   const message = await db.contactMessage.create({
-    data: parsed.data,
+    data: messageData,
     select: { id: true },
   });
 
@@ -201,7 +204,11 @@ export async function submitContactMessageAction(
     entityType: "ContactMessage",
     entityId: message.id,
     ip,
-    metadata: { email: parsed.data.email, subject: parsed.data.subject },
+    metadata: {
+      email: parsed.data.email,
+      subject: parsed.data.subject,
+      consentAcceptedAt: new Date().toISOString(),
+    },
   });
 
   updateTag("contact-messages");

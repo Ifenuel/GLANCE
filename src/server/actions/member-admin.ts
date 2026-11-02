@@ -60,6 +60,11 @@ export async function registerDirectMemberAction(
   }
 
   const errors: Record<string, string[]> = {};
+  // Consent is mandatory before anyone else's details are stored, whatever
+  // the browser was asked for.
+  if (formData.get("consent") !== "on") {
+    errors.consent = ["Consent is required before creating this member record"];
+  }
   if (fullName.length < 3) errors.fullName = ["Enter the member's full name"];
   if (!emailOk(email)) errors.email = ["Enter a valid email address"];
   if (!chapterId) errors.chapterId = ["Choose the chapter"];
