@@ -29,7 +29,8 @@ export type MailResult =
 
 const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 
-const BRAND_NAME = "theglanceproject";
+const BRAND_NAME = "GLANCE";
+const FALLBACK_SENDER = "no-reply@glance.org.ng";
 const NAVY = "#0A2550";
 const GOLD = "#EAAE14";
 const INK = "#46566D";
@@ -41,7 +42,8 @@ function sender() {
     process.env.BREVO_SENDER_EMAIL?.trim() ||
     process.env.INVITE_EMAIL_FROM?.trim() ||
     "";
-  const email = raw.includes("@") ? raw : "no-reply@theglanceproject.com";
+  // Accepts both "a@b.c" and "Name <a@b.c>" formats; extracts the bare address.
+  const email = raw.match(/[\w.+-]+@[\w.-]+\.[\w]+/)?.[0] ?? FALLBACK_SENDER;
   return { name, email };
 }
 
@@ -284,25 +286,30 @@ export function chapterActivatedEmail(input: {
 const SECRETARIAT_INBOX =
   process.env.GLANCE_SECRETARIAT_EMAIL?.trim() || "info@theglanceproject.com";
 
-/** Sent to the new address after the account's email is changed in the portal. */
-export function emailChangedEmail(input: {
+/** Sent to the NEW address when an email change is requested. Nothing
+ * switches until the link is clicked — until then the old address keeps
+ * working, so a mistyped request can never lock anyone out. */
+export function emailChangeConfirmationEmail(input: {
   to: string;
   name: string | null;
-  staffCode: string | null;
+  link: string;
+  expiresInHours: number;
 }): MailPayload {
   return {
     to: input.to,
-    workflow: "glance-email-changed",
-    subject: "Your GLANCE email address has been updated",
-    heading: "Your GLANCE email address has been updated",
+    workflow: "glance-email-change-confirmation",
+    subject: "Confirm your new GLANCE email address",
+    heading: "Confirm your new GLANCE email address",
     body: [
       input.name ? `Hello ${input.name},` : "Hello,",
-      `The email address on your GLANCE account is now ${input.to}. This is the address you sign in with from now on.`,
-      input.staffCode
-        ? `Your GLANCE reference is ${input.staffCode}. Keep it — it identifies your record across the platform.`
-        : "No further action is needed — your account is ready to use.",
-      "If this was you, you are all set. If you did not make this change, reply to this message right away so the secretariat can secure your account.",
+      `A request was made to switch your GLANCE account to this address (${input.to}).`,
+      `Click below to confirm. The link expires in ${input.expiresInHours} hours — until you confirm, your account stays on its current address and your sign-in does not change.`,
+      "If this was not you, no action is needed and your account is untouched.",
     ],
+    action: {
+      label: "Confirm my new email address",
+      url: input.link,
+    },
   };
 }
 

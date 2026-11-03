@@ -9,9 +9,11 @@ import { verifyUploadedAsset } from "@/server/cloudinary";
 import { accountSchema, parseForm, profileSchema, type FormState } from "@/server/validation";
 import {
   sendTransactionalEmail,
-  emailChangedEmail,
+  emailChangeConfirmationEmail,
   emailChangedNoticeEmail,
 } from "@/server/email";
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { headers } from "next/headers";
 import { generateStaffCode } from "@/server/ids";
 
 /**
@@ -91,7 +93,10 @@ export async function updateAccountAction(
     where: { id: user.id },
     data: {
       name: data.name,
-      email: data.email,
+      // An email change is only PERMISSION to switch — the address itself
+      // follows the confirmed link, so a mistyped request can never lock
+      // the account out of its own portal.
+      email: emailChanged ? undefined : data.email,
       phone: data.phone || null,
       gender: data.gender || user.gender || "PREFER_NOT_TO_SAY",
       department: data.department || user.department || null,
@@ -102,35 +107,58 @@ export async function updateAccountAction(
     },
   });
 
-  // The user should never be left wondering whether a mail went out: the
-  // change is confirmed to the new address — and the old one gets a security
-  // notice — with an explicit delivery outcome reported back into the form.
+  // The user should never be left wondering whether a mail went out: the new
+  // address receives a confirmation LINK, the old one receives a security
+  // notice, and the delivery outcome is reported back into the form.
   let confirmations = "";
   if (emailChanged) {
+    // Stateless confirmation token: signed with the account's current
+    // password hash, so it expires on its own and is voided the moment the
+    // password changes. No pending-change table required.
+    const row = await db.user.findUnique({
+      where: { id: user.id },
+      select: { passwordHash: true },
+    });
+    const expiresIn = 24;
+    const expiresAt = Date.now() + expiresIn * 60 * 60 * 1000;
+    const payload = `${user.id}|${data.email}|${expiresAt}`;
+    const signature = createHmac("sha256", row?.passwordHash ?? "")
+      .update(payload)
+      .digest("base64url");
+    const token = `${Buffer.from(payload).toString("base64url")}.${signature}`;
+
+    const headerList = await headers();
+    const host =
+      headerList.get("x-forwarded-host") ??
+      headerList.get("host") ??
+      "localhost:3000";
+    const proto =
+      headerList.get("x-forwarded-proto") ??
+      (host.startsWith("localhost") ? "http" : "https");
+    const link = `${proto}://${host}/portal/confirm-email?token=${encodeURIComponent(token)}`;
+
     const [toNew, toOld] = await Promise.all([
       sendTransactionalEmail(
-        emailChangedEmail({
+        emailChangeConfirmationEmail({
           to: data.email,
-          name: result.name,
-          staffCode: result.staffCode,
+          name: data.name,
+          link,
+          expiresInHours: expiresIn,
         }),
       ),
       sendTransactionalEmail(
         emailChangedNoticeEmail({
           to: user.email,
           name: result.name,
-          newEmail: result.email,
+          newEmail: data.email,
         }),
       ),
     ]);
-    confirmations =
-      toNew.delivered && toOld.delivered
-        ? ` A confirmation email was sent to ${result.email} and a security notice to your previous address.`
-        : toNew.delivered
-          ? ` A confirmation email was sent to ${result.email}; the notice to your previous address could not be delivered.`
-          : toOld.delivered
-            ? ` A security notice was sent to your previous address; the confirmation to ${result.email} could not be delivered.`
-            : " Email delivery is not configured in this environment, so no confirmation email was sent.";
+    confirmations = toNew.delivered
+      ? ` A confirmation link was sent to ${data.email} — click it to switch. Your account and your sign-in stay exactly as they are until you do.`
+      : toOld.delivered
+        ? ` The confirmation link could not be delivered, so your address has not changed. A security notice still went to your old address. Please try again later.`
+        : " The email service could not deliver the confirmation link, so your address has not changed — nothing was silently dropped. Check the sender address configuration and try again.";
   }
 
   if (user.profile) {
@@ -323,4 +351,94 @@ export async function setGenderVisibilityAction(formData: FormData) {
   });
 
   revalidatePath("/portal/profile");
+}
+
+/**
+ * Applies a signed, unexpired email change — the click behind the
+ * confirmation link. Public by design: the link in the account holder's
+ * inbox is the proof, no session required. The signature is re-derived from
+ * the account's CURRENT password hash, so a password change voids
+ * outstanding links.
+ */
+export async function confirmEmailChangeAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const invalid: FormState = {
+    status: "error",
+    message:
+      "This confirmation link is not valid. Open the portal, save your account details again and a fresh link will be sent.",
+    error: "This confirmation link is not valid.",
+  };
+
+  const token = String(formData.get("token") ?? "");
+  const dot = token.lastIndexOf(".");
+  if (dot <= 0) return invalid;
+
+  let payload: string;
+  try {
+    payload = Buffer.from(token.slice(0, dot), "base64url").toString("utf8");
+  } catch {
+    return invalid;
+  }
+  const given = token.slice(dot + 1);
+
+  const [userId, newEmail, expiresRaw] = payload.split("|");
+  const expiresAt = Number.parseInt(expiresRaw ?? "", 10);
+  if (!userId || !newEmail || !Number.isFinite(expiresAt)) return invalid;
+  if (expiresAt < Date.now()) {
+    return {
+      status: "error",
+      message:
+        "This confirmation link has expired. Save your account details in the portal again and a fresh link will be sent.",
+      error: "This confirmation link has expired.",
+    };
+  }
+
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, name: true, passwordHash: true },
+  });
+  if (!user) return invalid;
+
+  // The signature only matches the account's current password digest.
+  const expected = createHmac("sha256", user.passwordHash ?? "")
+    .update(`${userId}|${newEmail}|${expiresRaw}`)
+    .digest("base64url");
+  const a = Buffer.from(given);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return invalid;
+
+  const taken = await db.user.findFirst({
+    where: { email: newEmail, id: { not: user.id } },
+    select: { id: true },
+  });
+  if (taken) {
+    return {
+      status: "error",
+      message:
+        "That email address already belongs to another GLANCE account.",
+      error: "That email address already belongs to another GLANCE account.",
+    };
+  }
+
+  await db.user.update({
+    where: { id: user.id },
+    data: { email: newEmail },
+  });
+
+  await writeAudit({
+    actorId: user.id,
+    action: "member.email_confirmed",
+    entityType: "User",
+    entityId: user.id,
+    ip: await requestIp(),
+    metadata: { newEmail },
+  });
+
+  return {
+    status: "success",
+    success: `Confirmed — ${newEmail} is now the address on your GLANCE account. Sign in with it from now on.`,
+    message: "Email address confirmed.",
+  };
 }

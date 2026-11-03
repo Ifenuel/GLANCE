@@ -1,7 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+
+/** The real 3D building (three.js) is one extra chunk that only ever loads
+ * while the welcome film is actually playing on the homepage. */
+const IntroBuildingScene = lazy(
+  () =>
+    import("./intro-building-3d").then((m) => ({ default: m.IntroBuildingScene })),
+);
 
 export const INTRO_STORAGE_KEY = "glance:intro-seen";
 
@@ -31,24 +38,6 @@ function markWelcomed() {
     // Same as above — the in-memory still covers this page load.
   }
 }
-
-/**
- * The GLANCE House. A hexagonal building whose six faces are, literally, the
- * six things GLANCE opens for you. The house turns on its own like a slow
- * carousel and the visitor can take hold of it and walk it around a full
- * 360° — every side shows its offer in gold on deep-navy glass.
- */
-const OFFERS = [
-  { title: "Scholarships", note: "Study support that reaches real students" },
-  { title: "Mentorship", note: "National leaders backing your next step" },
-  { title: "Leadership", note: "The chance to run something that matters" },
-  { title: "Civic education", note: "Know your rights, your vote, your nation" },
-  { title: "Career growth", note: "A pathway from campus into purpose" },
-  { title: "Community impact", note: "Projects that land where you live" },
-];
-
-const HEX = 6;
-const FACE_STEP = 360 / HEX;
 
 /**
  * The site's opening film, starring the GLANCE House:
@@ -138,14 +127,6 @@ export function CinematicIntro() {
       const gsap = mod.default;
 
       ctx = gsap.context(() => {
-        const house = stage.querySelector<HTMLElement>("[data-house]");
-        const faces = Array.from(
-          stage.querySelectorAll<HTMLElement>("[data-face]"),
-        );
-        const reducedHere = window.matchMedia(
-          "(prefers-reduced-motion: reduce)",
-        ).matches;
-
         const tl = gsap.timeline({
           defaults: { ease: "power3.out" },
           onComplete: () => dismiss(),
@@ -171,112 +152,14 @@ export function CinematicIntro() {
           ).to(invite, { opacity: 0, y: -24, duration: 0.6, ease: "power2.in" }, 2.8);
         }
 
-        // ── Scene 2: the House ─────────────────────────────────────────
-        if (house) {
-          tl.set("[data-house-scene]", { visibility: "visible" }, 3.2)
-            .fromTo(
-              "[data-house-scene]",
-              { opacity: 0 },
-              { opacity: 1, duration: 0.4 },
-              3.2,
-            )
-            .set(house, { visibility: "visible" }, 3.4)
-            .fromTo(
-              house,
-              { opacity: 0, y: 180, scale: 0.6 },
-              { opacity: 1, y: 0, scale: 1, duration: 1.6, ease: "power4.out" },
-              3.4,
-            );
-        }
-
-        faces.forEach((face, i) => {
-          const inner = face.querySelector<HTMLElement>("[data-face-inner]");
-          if (!inner) return;
-          const at = 3.9 + i * 0.45;
-          tl.set(face, { visibility: "visible" }, at)
-            .fromTo(
-              inner,
-              { opacity: 0, y: 26 },
-              { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" },
-              at,
-            );
-        });          if (house && !reducedHere) {
-          // The house turns on its own, visibly, until the visitor takes the
-          // wheel — then it yields and turns by hand with momentum.
-          let spin = gsap.to(house, {
-            rotateY: "+=360",
-            duration: 30,
-            repeat: -1,
-            ease: "none",
-          });
-          cleanups.push({ kill: () => spin.kill() });
-
-          let dragging = false;
-          let lastX = 0;
-          let lastMoveTime = 0;
-          let velocity = 0;
-
-          const onDown = (event: PointerEvent) => {
-            if ((event.target as HTMLElement).closest("button")) return;
-            dragging = true;
-            velocity = 0;
-            lastX = event.clientX;
-            lastMoveTime = performance.now();
-            spin.pause();
-            gsap.set(house, { cursor: "grabbing" });
-          };
-          const onMove = (event: PointerEvent) => {
-            if (!dragging) return;
-            // Touch: without this the browser starts a scroll and cancels
-            // the pointer sequence before a single degree is turned.
-            event.preventDefault();
-            const now = performance.now();
-            const dx = event.clientX - lastX;
-            const dt = Math.max(now - lastMoveTime, 1);
-            if (dx !== 0) {
-              const delta = dx * 0.35;
-              velocity = (delta / dt) * 16.7; // per-frame target
-              gsap.set(house, { rotateY: `+=${delta}` });
-              lastX = event.clientX;
-              lastMoveTime = now;
-            }
-          };
-          const onUp = () => {
-            if (!dragging) return;
-            dragging = false;
-            gsap.set(house, { cursor: "grab" });
-            // Hand momentum back to the carousel: glide with what the visitor
-            // left behind, then settle back into the everlasting turn. One
-            // spin tween at a time — the paused one is retired first.
-            spin.kill();
-            spin = gsap.fromTo(
-              house,
-              { rotateY: `+=${velocity * 0.9}` },
-              {
-                rotateY: "+=360",
-                duration: Math.max(10, 30 - Math.min(Math.abs(velocity) * 2, 24)),
-                repeat: -1,
-                ease: "none",
-              },
-            );
-          };
-
-          const grabSurface = stage.querySelector<HTMLElement>("[data-grab]");
-          if (grabSurface) {
-            grabSurface.addEventListener("pointerdown", onDown);
-            window.addEventListener("pointermove", onMove);
-            window.addEventListener("pointerup", onUp);
-            window.addEventListener("pointercancel", onUp);
-            cleanups.push({
-              kill: () => {
-                grabSurface.removeEventListener("pointerdown", onDown);
-                window.removeEventListener("pointermove", onMove);
-                window.removeEventListener("pointerup", onUp);
-                window.removeEventListener("pointercancel", onUp);
-              },
-            });
-          }
-        }
+        // ── Scene 2: the GLANCE House rises as one veil — the building
+        // itself is a real-time 3D scene that turns and answers the hand.
+        tl.set("[data-house-scene]", { visibility: "visible" }, 3.2).fromTo(
+          "[data-house-scene]",
+          { opacity: 0 },
+          { opacity: 1, duration: 0.5 },
+          3.2,
+        );
 
         const hint = stage.querySelector<HTMLElement>("[data-hint]");
         if (hint) {
@@ -328,11 +211,6 @@ export function CinematicIntro() {
 
   if (!active) return null;
 
-  // A hexagon whose circumradius keeps the projected building inside a
-  // readable column on every viewport (GSAP rotates in transforms; the
-  // vertical anchor lives in `top`, which GSAP never touches).
-  const radius = streetWidth(190) / 2 / Math.tan(Math.PI / HEX);
-
   return (
     <div
       className={`fixed inset-0 z-[9998] overflow-hidden bg-navy-950 [transition:opacity_500ms_ease] ${
@@ -340,7 +218,6 @@ export function CinematicIntro() {
       }`}
       aria-hidden={leaving}
     >
-      <style>{STAGE_CSS}</style>
       <div ref={stageRef} className="absolute inset-0">
         {/* ── Scene 1: the invitation ─────────────────────────────────── */}
         <div
@@ -417,97 +294,17 @@ export function CinematicIntro() {
             </h1>
           </div>
 
-          {/* The House itself, in one shared 3D perspective. The visitor can
-              grab it anywhere on the stone apron and walk it round 360°. */}
+          {/* The House of the movement, rebuilt as a real 3D building. The
+              canvas owns the pointer: drag anywhere on it and the walk-around
+              follows the hand, momentum included, turning on its own between
+              visits. */}
           <div
             data-grab
             className="absolute inset-x-0 bottom-[17vh] top-[24vh] cursor-grab touch-none select-none"
           >
-            {/* A screen-space wrapper: the whole scene scales down on small
-                viewports so the building never floods the screen. */}
-            <div data-house-wrap className="absolute inset-0">
-            {/* The institution's rooftop billboard: outside the 3D scene, so
-                "GLANCE" is always crisp and readable no matter how the
-                building turns. It is anchored with the same height formula as
-                the house, so it always hangs on the roof's edge. */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 top-[calc(50%_-_min(62vw,400px)_*_0.34_-_14px)] z-[2] flex -translate-y-full -translate-x-1/2 items-center whitespace-nowrap rounded-md border border-gold-400/45 bg-navy-950/90 px-4 py-1.5 shadow-[0_14px_34px_-20px_rgba(234,174,20,0.7)] sm:px-5"
-            >
-              <span className="text-[13px] font-extrabold tracking-[0.3em] text-gold-400 uppercase sm:text-[15px] sm:tracking-[0.4em]">
-                GLANCE
-              </span>
-              <span
-                aria-hidden="true"
-                className="mx-2 hidden h-3.5 w-px bg-gold-400/50 sm:mx-3 sm:block"
-              />
-              <span className="hidden text-[10px] font-bold tracking-[0.26em] text-white/60 uppercase sm:block">
-                House of the movement
-              </span>
-            </div>
-
-            <div className="absolute inset-0" style={{ perspective: "1300px", perspectiveOrigin: "50% 44%" }}>
-              <div
-                data-house
-                className="absolute left-1/2 top-[calc(50%_-_min(62vw,400px)_*_0.34)] h-[min(62vw,400px)] w-[min(54vw,340px)] -translate-x-1/2"
-                style={{
-                  transformStyle: "preserve-3d",
-                  visibility: "hidden",
-                  touchAction: "none",
-                }}
-              >
-                {/* Stone apron under the building — it turns with the house
-                    so the floor sense of a real round trip remains */}
-                <div
-                  aria-hidden="true"
-                  data-face-inner
-                  className="absolute left-1/2 top-full h-[110px] w-[125%] -translate-x-1/2 rounded-[50%] border border-gold-400/10 bg-[radial-gradient(ellipse_at_center,rgba(10,37,80,0.9)_0%,rgba(10,37,80,0.3)_55%,transparent_75%)]"
-                  style={{ transform: "translateX(-50%) rotateX(86deg) translateZ(-40px)" }}
-                />
-
-                <div
-                  className="absolute inset-x-0 top-0 bottom-0"
-                  style={{ transformStyle: "preserve-3d" }}
-                >
-                  {/* Hexagonal roof slab: a real plate above the walls, its
-                      top surface caught by a slight forward tilt. */}
-                  <div
-                    aria-hidden="true"
-                    className="absolute left-1/2 top-0"
-                    style={{
-                      width: `${Math.round(radius * 2 + 16)}px`,
-                      height: `${Math.round(radius * 0.95)}px`,
-                      clipPath:
-                        "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)",
-                      background:
-                        "linear-gradient(160deg, rgba(30,55,96,0.98) 0%, rgba(10,26,48,0.98) 60%, rgba(8,20,38,0.98) 100%)",
-                      borderBottom: "1px solid rgba(234,174,20,0.35)",
-                      transform: `translateX(-50%) translateY(${Math.round(-radius * 0.18)}px) rotateX(77deg)`,
-                      transformStyle: "preserve-3d",
-                      filter: "drop-shadow(0 10px 18px rgba(0,0,0,0.45))",
-                    }}
-                  />
-
-                  {/* Six glass faces, one offer each, presented round */}
-                  {OFFERS.map((offer, i) => {
-                    const faceAngle = FACE_STEP * i;
-                    // Faces are square for a hexagon: side = 2R tan(π/6).
-                    const faceWidth = Math.round(Math.tan(Math.PI / HEX) * 2 * radius);
-                    return (
-                      <Face
-                        key={offer.title}
-                        angle={faceAngle}
-                        width={faceWidth}
-                        radius={radius}
-                        offer={offer}
-                        dataFaceIndex={i}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-            </div>
+            <Suspense fallback={null}>
+              <IntroBuildingScene />
+            </Suspense>
           </div>
         </div>
 
@@ -546,111 +343,3 @@ export function CinematicIntro() {
     </div>
   );
 }
-
-/** Hexagon apothem helper: side length for a given circumradius. Derived at
- * render so shrinkage is a function of viewport, not a fixed pixel guess. */
-function streetWidth(circumradius: number) {
-  return circumradius;
-}
-
-/** One hexagonal face of the GLANCE House. `angle` is its position round the
- * building; the face content lifts in as the house settles. */
-function Face({
-  angle,
-  width,
-  radius,
-  offer,
-  dataFaceIndex,
-}: {
-  angle: number;
-  width: number;
-  radius: number;
-  offer: { title: string; note: string };
-  dataFaceIndex: number;
-}) {
-  return (
-    <div
-      data-face
-      className="absolute left-1/2 top-0"
-      style={{
-        width: `${width}px`,
-        height: "100%",
-        marginLeft: `${-width / 2}px`,
-        transform: `rotateY(${angle}deg) translateZ(${radius}px)`,
-        transformStyle: "preserve-3d",
-        visibility: "hidden",
-        backfaceVisibility: "hidden",
-      }}
-    >
-      <div
-        data-face-inner
-        className="fx-glass relative flex h-full w-full flex-col items-center justify-center gap-2 px-4 pb-14 pt-10 text-center will-change-transform"
-        style={{ transformStyle: "preserve-3d" }}
-      >
-        {/* Facade architecture: cornice, corner pilasters, mullioned glazing
-            above a solid plinth — reads as a real building from every side. */}
-        <span aria-hidden="true" className="absolute inset-x-0 top-0 h-2.5 border-b border-gold-400/25 bg-gradient-to-b from-gold-400/20 to-transparent" />
-        <span aria-hidden="true" className="absolute inset-y-0 left-2 w-px bg-gold-400/25" />
-        <span aria-hidden="true" className="absolute inset-y-0 right-2 w-px bg-gold-400/25" />
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-5 top-4 bottom-[46%] opacity-35"
-          style={{
-            background:
-              "repeating-linear-gradient(90deg, rgba(255,255,255,0.09) 0 2px, transparent 2px 24px)",
-          }}
-        />
-        <span
-          aria-hidden="true"
-          className="absolute inset-x-0 bottom-0 h-[38%] border-t border-gold-400/15 bg-gradient-to-b from-navy-950/30 to-navy-950/60"
-        />
-
-        <span className="font-data text-[10px] font-bold tracking-[0.3em] text-gold-300/70 uppercase">
-          {String(dataFaceIndex + 1).padStart(2, "0")}
-        </span>
-        <p className="text-[15px] font-extrabold tracking-[0.06em] text-white uppercase sm:text-[17px]">
-          {offer.title}
-        </p>
-        <p className="hidden max-w-[10rem] text-[11px] leading-[1.55] text-white/55 sm:block">
-          {offer.note}
-        </p>
-        <span className="mt-1 h-px w-8 bg-gold-400/40" />
-
-        {/* The entrance every face of the house carries */}
-        <span
-          aria-hidden="true"
-          className="absolute bottom-3 left-1/2 h-8 w-9 -translate-x-1/2 rounded-t-[4px] border border-gold-400/30 bg-navy-950/80"
-        >
-          <span
-            aria-hidden="true"
-            className="absolute top-1/2 right-1 h-1 w-1 -translate-y-1/2 rounded-full bg-gold-400/70"
-          />
-        </span>
-      </div>
-    </div>
-  );
-}
-
-const STAGE_CSS = `
-.fx-glass {
-  border-radius: 14px;
-  border: 1px solid rgba(234, 174, 20, 0.28);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 55%, rgba(234, 174, 20, 0.06) 100%),
-    rgba(10, 24, 46, 0.72);
-  box-shadow:
-    inset 0 0 28px rgba(234, 174, 20, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(3px);
-}
-@media (prefers-reduced-motion: reduce) {
-  .fx-glass { animation: none !important; }
-}
-[data-house-wrap] { transform-origin: 50% 58%; }
-@media (min-width: 1100px) {
-  [data-house-wrap] { transform: scale(1.12); }
-}
-@media (max-width: 1000px) {
-  [data-house-wrap] { transform: scale(0.82); }
-}
-`;

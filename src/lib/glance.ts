@@ -10,7 +10,7 @@ export const brand = {
   name: "GLANCE",
   expansion: "Governance, Leadership and National Civic Engagement",
   tagline: "Governance · Leadership · National Civic Engagement",
-  contactEmail: "info@glance.org",
+  contactEmail: "info@glance.org.ng",
 } as const;
 
 /** The two statements that open the mission section. */

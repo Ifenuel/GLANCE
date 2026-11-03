@@ -18,6 +18,7 @@ const PUBLIC_PORTAL_PATHS = new Set([
   "/portal/forgot-password",
   "/portal/reset-password",
   "/portal/activate",
+  "/portal/confirm-email",
 ]);
 
 export function proxy(request: NextRequest): NextResponse {
