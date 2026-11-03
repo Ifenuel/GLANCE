@@ -7,6 +7,7 @@ import { cache } from "react";
 import bcrypt from "bcryptjs";
 import { Prisma, Role } from "@prisma/client";
 import { db } from "./db";
+import { generateStaffCode } from "./ids";
 
 export const SESSION_COOKIE = "glance_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14; // 14 days
@@ -214,8 +215,35 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const user = session.user;
   if (user.status === "DEACTIVATED" || user.status === "SUSPENDED") return null;
 
-  return user;
+  return ensureStaffCode(user);
 });
+
+const STAFF_ROLES: readonly Role[] = [
+  Role.SUPER_ADMIN,
+  Role.AGID_ADMIN,
+  Role.COMM_MANAGER,
+  Role.CHAPTER_ADMIN,
+];
+
+/**
+ * Every staff account carries a permanent GLANCE reference (GLN-STF-…). It is
+ * minted once and never reissued. Accounts created before references existed —
+ * or before the role was covered — are filled in the first time they are seen,
+ * so a signed-in person never stares at an empty GLANCE ID.
+ */
+async function ensureStaffCode(user: SessionUser): Promise<SessionUser> {
+  if (user.staffCode || !STAFF_ROLES.includes(user.role) || !user.profileCompletedAt) {
+    return user;
+  }
+  try {
+    const staffCode = await generateStaffCode();
+    await db.user.update({ where: { id: user.id }, data: { staffCode } });
+    return { ...user, staffCode };
+  } catch {
+    // A reference is nice to have; never block sign-in over it.
+    return user;
+  }
+}
 
 export async function requireUser(): Promise<SessionUser> {
   const user = await getCurrentUser();

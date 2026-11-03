@@ -36,6 +36,42 @@ const GOLD = "#EAAE14";
 const INK = "#46566D";
 const LINE = "#e3e9f1";
 
+/**
+ * Where email links and the logo live in production. The custom domain is not
+ * serving yet, so this points at the live deployment; switch it to
+ * https://glance.org.ng once that domain resolves.
+ */
+const PRODUCTION_ORIGIN = "https://glance-mu-nine.vercel.app";
+
+/** Public site origin, used for logo, links and the footer. */
+function appOrigin() {
+  const raw = process.env.NEXT_PUBLIC_APP_ORIGIN?.trim() || process.env.APP_ORIGIN?.trim() || "";
+  const cleaned = raw.replace(/\/+$/, "");
+  if (!/^https?:\/\//.test(cleaned)) return PRODUCTION_ORIGIN;
+  // A deployed build must never email localhost links to real people.
+  if (
+    process.env.NODE_ENV === "production" &&
+    /^https?:\/\/(localhost|127\.0\.0\.1)/.test(cleaned) &&
+    !process.env.LOCAL_EMAIL_LINKS
+  ) {
+    return PRODUCTION_ORIGIN;
+  }
+  return cleaned;
+}
+
+const FONT = "Arial, 'Helvetica Neue', Helvetica, sans-serif";
+
+/** Small uppercase label that tells the reader what kind of message this is. */
+const WORKFLOW_EYEBROWS: Record<string, string> = {
+  "glance-invitation": "You are invited",
+  "glance-password-reset": "Account security",
+  "glance-join-received": "Membership application",
+  "glance-chapter-activated": "Chapter activation",
+  "glance-email-change-confirmation": "Confirm your new address",
+  "glance-email-changed-notice": "Security notice",
+  "glance-activity-report": "Chapter activity report",
+};
+
 function sender() {
   const name = process.env.INVITE_EMAIL_NAME?.trim() || BRAND_NAME;
   const raw =
@@ -58,8 +94,12 @@ function renderText(payload: MailPayload) {
   }
   lines.push(
     "",
+    "--",
     "GLANCE | Governance, Leadership and National Civic Engagement",
     "A structured leadership and civic engagement club for tertiary institutions across Africa.",
+    `Website: ${appOrigin()}`,
+    `Contact: ${SECRETARIAT_CONTACT}`,
+    "This is a transactional message about your GLANCE account or a GLANCE activity.",
   );
   return lines.join("\n");
 }
@@ -72,64 +112,103 @@ function escapeHtml(value: string) {
     .replaceAll('"', "&quot;");
 }
 
+const SECRETARIAT_CONTACT =
+  process.env.GLANCE_SECRETARIAT_EMAIL?.trim() || "info@glance.org.ng";
+
 /**
- * One calm, modern email frame used for every message: navy masthead with a
- * gold hairline, white card, gold action button, styled activation-code box
- * when a code is embedded, quiet footer. All styles are inline so the mail
- * renders the same in Gmail, Outlook and on phones.
+ * One professional email frame shared by every message GLANCE sends:
+ * white brand header with the GLANCE lockup and a gold rule, an eyebrow that
+ * names the message, a clear heading, the copy, an optional activation-code
+ * panel, a gold call-to-action button, and a navy footer carrying the
+ * website, the contact address and why the reader received the mail.
+ * Everything is inline and table-based so it holds up in Gmail, Outlook,
+ * Apple Mail and on phones.
  */
 export function renderMailHtml(payload: MailPayload): string {
+  const origin = appOrigin();
+  const eyebrow = WORKFLOW_EYEBROWS[payload.workflow] ?? "GLANCE Secretariat";
+  const logoUrl = `${origin}/_brand/glance-lockup.png`;
+
   const paragraphs = payload.body
+    .filter((line) => line.trim().length > 0)
     .map(
       (line) =>
-        `<p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:${INK};">${escapeHtml(line)}</p>`,
-    )
-    .join("");
+        `<p style="margin:0 0 15px;font-family:${FONT};font-size:15px;line-height:1.68;color:${INK};">${escapeHtml(line)}</p>`,
+    );
 
   const codeBox = payload.data?.activation_code
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0 6px;background:#fdf4da;border:1px solid #fbe8a8;border-radius:12px;"><tr><td style="padding:16px 20px;text-align:center;">
-         <p style="margin:0 0 6px;font-size:10.5px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#8a6100;">Activation code</p>
-         <p style="margin:0;font-size:24px;font-weight:800;letter-spacing:0.12em;color:${NAVY};font-family:'Courier New',monospace;">${escapeHtml(payload.data.activation_code)}</p>
-       </td></tr></table>`
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0 20px;border-collapse:separate;">
+         <tr><td style="background:#fdf6e3;border:1px solid #f2dfa4;border-left:4px solid ${GOLD};border-radius:10px;padding:16px 20px;text-align:center;">
+           <p style="margin:0 0 7px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#8a6100;">Your activation code</p>
+           <p style="margin:0;font-size:25px;line-height:1.2;font-weight:800;letter-spacing:0.16em;color:${NAVY};font-family:'Courier New',Courier,monospace;">${escapeHtml(payload.data.activation_code)}</p>
+           <p style="margin:7px 0 0;font-family:${FONT};font-size:11.5px;color:#8a6100;">Single use &middot; expires in 14 days</p>
+         </td></tr>
+       </table>`
     : "";
 
   const action = payload.action
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:26px 0 6px;"><tr><td style="border-radius:10px;background:${GOLD};box-shadow:0 8px 18px -10px rgba(234,174,20,0.7);">
-         <a href="${escapeHtml(payload.action.url)}" style="display:inline-block;padding:14px 30px;font-size:14.5px;font-weight:700;color:${NAVY};text-decoration:none;border-radius:10px;">${escapeHtml(payload.action.label)} &rarr;</a>
-       </td></tr></table>
-       <p style="margin:14px 0 0;font-size:12.5px;line-height:1.6;color:#7c8ca3;">If the button does not work, copy and paste this link into your browser:<br/>
-       <a href="${escapeHtml(payload.action.url)}" style="color:#2f60a5;word-break:break-all;">${escapeHtml(payload.action.url)}</a></p>`
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:26px 0 8px;"><tr>
+         <td align="center" bgcolor="${GOLD}" style="border-radius:10px;">
+           <a href="${escapeHtml(payload.action.url)}" style="display:inline-block;padding:15px 34px;font-family:${FONT};font-size:15px;font-weight:700;line-height:1;color:${NAVY};text-decoration:none;border-radius:10px;letter-spacing:0.01em;">${escapeHtml(payload.action.label)} &nbsp;&rarr;</a>
+         </td></tr></table>
+       <p style="margin:16px 0 0;font-family:${FONT};font-size:12px;line-height:1.65;color:#7c8ca3;">If the button does not work, copy this link into your browser:<br/>
+       <a href="${escapeHtml(payload.action.url)}" style="color:#2f60a5;word-break:break-all;text-decoration:underline;">${escapeHtml(payload.action.url)}</a></p>`
     : "";
 
+  const preheader = escapeHtml(payload.body[1] ?? payload.body[0] ?? payload.heading);
+
   return `<!doctype html>
-<html lang="en">
-  <body style="margin:0;padding:0;background:#f2f6fc;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2f6fc;padding:32px 12px;">
-      <tr><td align="center">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
-          <tr><td style="background:${NAVY};border-radius:16px 16px 0 0;padding:28px 32px;border-bottom:3px solid ${GOLD};">
-            <p style="margin:0;font-size:19px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#ffffff;">${BRAND_NAME}</p>
-            <p style="margin:6px 0 0;font-size:11px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.62);">Governance &middot; Leadership &middot; National Civic Engagement</p>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
+    <title>${escapeHtml(payload.subject)}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#eef3f9;font-family:${FONT};">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;font-size:1px;line-height:1px;font-family:${FONT};">${preheader}</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef3f9;">
+      <tr><td align="center" style="padding:36px 12px 28px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+
+          <!-- Brand header -->
+          <tr><td style="background:#ffffff;border-radius:16px 16px 0 0;padding:30px 32px 22px;text-align:center;">
+            <img src="${logoUrl}" width="164" alt="GLANCE" style="display:block;margin:0 auto 6px;width:164px;max-width:70%;height:auto;border:0;outline:none;text-decoration:none;" />
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:3px solid ${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
           </td></tr>
-          <tr><td style="background:#ffffff;border-radius:0 0 16px 16px;padding:34px 32px 30px;box-shadow:0 24px 48px -32px rgba(5,37,80,0.28);">
-            <h1 style="margin:0 0 18px;font-size:21px;line-height:1.3;font-weight:800;color:${NAVY};letter-spacing:-0.015em;">${escapeHtml(payload.heading)}</h1>
-            ${codeBox}
-            ${paragraphs}
+
+          <!-- Message -->
+          <tr><td style="background:#ffffff;padding:30px 34px 34px;">
+            <p style="margin:0 0 10px;font-family:${FONT};font-size:10.5px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#b48310;">${escapeHtml(eyebrow)}</p>
+            <h1 style="margin:0 0 20px;font-family:${FONT};font-size:22px;line-height:1.3;font-weight:800;color:${NAVY};letter-spacing:-0.015em;">${escapeHtml(payload.heading)}</h1>
+            ${codeBox && paragraphs.length > 1 ? [paragraphs[0], codeBox, ...paragraphs.slice(1)].join("") : paragraphs.join("")}
             ${action}
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 0;border-top:1px solid ${LINE};">
-              <tr><td style="padding-top:18px;">
-                <p style="margin:0;font-size:12.5px;line-height:1.6;color:#7c8ca3;">
-                  With purpose,<br/><strong style="color:${NAVY};">The GLANCE Secretariat</strong>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:30px 0 0;">
+              <tr><td style="border-top:1px solid ${LINE};padding-top:20px;">
+                <p style="margin:0;font-family:${FONT};font-size:13.5px;line-height:1.7;color:#7c8ca3;">
+                  Warm regards,<br/><strong style="color:${NAVY};">The GLANCE Secretariat</strong><br/>
+                  <span style="font-size:12px;">Governance, Leadership and National Civic Engagement</span>
                 </p>
               </td></tr>
             </table>
           </td></tr>
-          <tr><td style="padding:22px 16px 8px;text-align:center;">
-            <p style="margin:0;font-size:11.5px;line-height:1.7;color:#8494a8;">
-              GLANCE is a structured leadership and civic engagement club operating within tertiary institutions across Africa.<br/>
-              You received this message because of activity on your GLANCE account.
+
+          <!-- Footer -->
+          <tr><td style="background:${NAVY};border-radius:0 0 16px 16px;padding:24px 30px 26px;text-align:center;">
+            <p style="margin:0 0 4px;font-family:${FONT};font-size:12.5px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#ffffff;">${BRAND_NAME}</p>
+            <p style="margin:0 0 14px;font-family:${FONT};font-size:11px;letter-spacing:0.06em;color:rgba(255,255,255,0.66);">Governance &middot; Leadership &middot; National Civic Engagement</p>
+            <p style="margin:0 0 14px;font-family:${FONT};font-size:12px;line-height:1.6;">
+              <a href="${origin}" style="color:${GOLD};text-decoration:none;font-weight:600;">${origin.replace(/^https?:\/\//, "")}</a>
+              <span style="color:rgba(255,255,255,0.35);">&nbsp;&middot;&nbsp;</span>
+              <a href="mailto:${SECRETARIAT_CONTACT}" style="color:${GOLD};text-decoration:none;font-weight:600;">${SECRETARIAT_CONTACT}</a>
+            </p>
+            <p style="margin:0;font-family:${FONT};font-size:10.5px;line-height:1.7;color:rgba(255,255,255,0.5);">
+              You received this message because of activity on a GLANCE account or a GLANCE chapter.<br/>
+              This is a transactional message and does not require a response unless stated above.
             </p>
           </td></tr>
+
         </table>
       </td></tr>
     </table>
@@ -216,7 +295,7 @@ export function invitationEmail(input: {
       `GLANCE has issued you a GLANCE ${roleLabel} invitation${
         input.chapterName ? ` for ${input.chapterName}` : ""
       }.`,
-      `Your activation code is ${input.code}. It can be used once and expires in 14 days.`,
+      "Your activation code is shown below. It can be used once and expires in 14 days.",
       "Open the link below and set your password to activate your account.",
     ],
     action: { label: "Activate my GLANCE account", url: input.url },
@@ -278,13 +357,12 @@ export function chapterActivatedEmail(input: {
       `Your chapter ${input.chapterName} (${input.chapterCode}) has been activated. Its page is live on the GLANCE website and member invitations can now be issued.`,
       "Sign in to the portal to keep the chapter record current and file activity reports as your campus meetings happen.",
     ],
-    action: { label: "Open the GLANCE portal", url: `${process.env.NEXT_PUBLIC_APP_ORIGIN ?? "http://localhost:3000"}/portal/dashboard` },
+    action: { label: "Open the GLANCE portal", url: `${appOrigin()}/portal/dashboard` },
     data: { chapter_code: input.chapterCode },
   };
 }
 
-const SECRETARIAT_INBOX =
-  process.env.GLANCE_SECRETARIAT_EMAIL?.trim() || "info@theglanceproject.com";
+const SECRETARIAT_INBOX = SECRETARIAT_CONTACT;
 
 /** Sent to the NEW address when an email change is requested. Nothing
  * switches until the link is clicked — until then the old address keeps

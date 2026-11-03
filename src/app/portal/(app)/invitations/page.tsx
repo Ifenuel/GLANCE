@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { db } from "@/server/db";
-import { getCurrentUser } from "@/server/auth";
+import { requireRole } from "@/server/auth";
 import {
     ButtonLink,
     Card,
@@ -22,13 +23,15 @@ export default async function InvitationsPage({
   searchParams: Promise<{ role?: string; status?: string }>;
 }) {
   const { role, status } = await searchParams;
-  const user = await getCurrentUser();
+  const user = await requireRole(["SUPER_ADMIN", "AGID_ADMIN", "CHAPTER_ADMIN"]);
+  const isOfficer = user.role === "SUPER_ADMIN" || user.role === "AGID_ADMIN";
+  const isChapterAdmin = user.role === "CHAPTER_ADMIN";
+
+  if (isChapterAdmin && !user.chapterId) redirect("/portal/profile");
+
   const where: Record<string, unknown> = { status: "PENDING" };
-  // Chapter administrators only see invitations for their own chapter.
-  if (user?.role === "CHAPTER_ADMIN") where.chapterId = user.chapterId;
-  if (user && user.role !== "AGID_ADMIN" && user.role !== "CHAPTER_ADMIN") {
-    where.chapterId = "__none__";
-  }
+  // Chapter coordinators only ever see their own chapter's invitations.
+  if (isChapterAdmin) where.chapterId = user.chapterId;
 
   if (role) where.role = role;
   if (status) where.status = status;
@@ -36,7 +39,7 @@ export default async function InvitationsPage({
   // The chapter filter list and the invitation rows don't depend on each
   // other — one wave instead of two.
   const [chapters, invitations] = await Promise.all([
-    user?.role === "AGID_ADMIN"
+    isOfficer
       ? db.chapter.findMany({
           where: { status: "ACTIVE" },
           orderBy: { name: "asc" },
@@ -76,8 +79,8 @@ export default async function InvitationsPage({
           />
         </div>
         <div className="flex gap-3">
-          <ButtonLink href="/portal/chapters" variant="outline">
-            Back to chapters
+          <ButtonLink href={isOfficer ? "/portal/chapters" : "/portal/chapter"} variant="outline">
+            {isOfficer ? "Back to chapters" : "Back to my chapter"}
           </ButtonLink>
           <ButtonLink href="/portal/invitations/new">Create invite</ButtonLink>
         </div>
@@ -86,11 +89,12 @@ export default async function InvitationsPage({
       <Card>
         <h3 className="text-base font-extrabold text-navy-900">Invite someone</h3>
         <p className="text-[12.5px] text-ink-500">
-          GLANCE and chapter coordinators can issue an invitation for a role in
-          a chapter.
+          {isChapterAdmin
+            ? "Invite a member to your chapter. The code you issue works for this chapter only."
+            : "GLANCE and chapter coordinators can issue an invitation for a role in a chapter."}
         </p>
         <div className="mt-4">
-          <InviteForm chapters={chapters} />
+          <InviteForm chapters={chapters} chapterAdmin={isChapterAdmin} />
         </div>
       </Card>
 

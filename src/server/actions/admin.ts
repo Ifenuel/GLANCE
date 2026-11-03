@@ -156,7 +156,9 @@ export async function issueInvitationAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const actor = await requireAgid();
+  // Chapter coordinators may invite members into their own chapter; staff and
+  // network-wide invitations stay with the GLANCE team.
+  const actor = await requireRole(["SUPER_ADMIN", "AGID_ADMIN", "CHAPTER_ADMIN"]);
   const ip = await requestIp();
 
   const guard = await rateLimit(`invite:${actor.id}`, 40, 15 * 60 * 1000);
@@ -172,8 +174,25 @@ export async function issueInvitationAction(
     return { status: "error", message: "Check the invitation details.", errors: parsed.errors };
   }
 
-  const role = parsed.data.role;
-  const chapterId = parsed.data.chapterId || null;
+  const isChapterAdmin = actor.role === "CHAPTER_ADMIN";
+  if (isChapterAdmin && !actor.chapterId) {
+    return {
+      status: "error",
+      message:
+        "Your account is not linked to a chapter yet, so there is nowhere to invite this person. Ask the GLANCE team to assign your chapter.",
+    };
+  }
+  if (isChapterAdmin && parsed.data.role !== "MEMBER") {
+    return {
+      status: "error",
+      message: "Chapter coordinators can invite members only. Staff accounts are created by the GLANCE team.",
+    };
+  }
+
+  // The chapter is taken from the signed-in account, never from the browser, so
+  // a coordinator cannot reach into another chapter.
+  const role = isChapterAdmin ? "MEMBER" : parsed.data.role;
+  const chapterId = isChapterAdmin ? actor.chapterId! : parsed.data.chapterId || null;
 
   try {
     const invitation = await issueInvitation({

@@ -59,8 +59,7 @@ const DETAIL: Partial<
     scope: "One chapter only",
     tone: "gold",
     can: [
-      "Approve or reject membership applications for their chapter",
-      "Add members directly and keep their records current",
+      "Register members for their own chapter and keep their records current",
       "Edit the chapter profile and contact details",
       "Submit activity reports for the chapter",
       "Invite members to their own chapter",

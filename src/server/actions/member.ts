@@ -85,7 +85,7 @@ export async function updateAccountAction(
   // members, so they carry their GLANCE reference on the account itself. It is
   // minted once, at first completion — or on this very save — never again.
   let staffCode = user.staffCode;
-  if (!staffCode && (user.role === "SUPER_ADMIN" || user.role === "AGID_ADMIN" || user.role === "COMM_MANAGER")) {
+  if (!staffCode && staffRole && !user.profile) {
     staffCode = await generateStaffCode();
   }
 

@@ -12,8 +12,10 @@ const roleOptions = [
 
 export function InviteForm({
   chapters = [],
+  chapterAdmin = false,
 }: {
   chapters?: { id: string; name: string; code: string }[];
+  chapterAdmin?: boolean;
 }) {
   const [state, formAction] = useActionState(issueInvitationAction, idleFormState);
 
@@ -55,13 +57,22 @@ export function InviteForm({
         label="Choose a role"
         htmlFor="role"
         required
+        hint={
+          chapterAdmin
+            ? "Members only — staff accounts are created by the GLANCE team."
+            : undefined
+        }
         error={state.errors?.role}
       >
         <Select
           id="role"
           name="role"
-          options={roleOptions}
-          defaultValue=""
+          options={
+            chapterAdmin
+              ? roleOptions.filter((option) => option.value === "MEMBER")
+              : roleOptions
+          }
+          defaultValue={chapterAdmin ? "MEMBER" : ""}
         />
       </Field>
 
