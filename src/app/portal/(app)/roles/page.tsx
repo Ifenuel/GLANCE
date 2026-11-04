@@ -78,21 +78,28 @@ export default async function RolesPage() {
 
   return (
     <div className="space-y-6">
-      <header className="rise">
-        <p className="text-[10.5px] font-bold tracking-[0.2em] text-gold-600 uppercase">
-          Access model
-        </p>
-        <h1 className="mt-2 text-[30px] leading-[1.12] font-semibold tracking-[-0.02em] text-navy-900">
-          Roles and access
-        </h1>
-        <p className="mt-2 max-w-[680px] text-[13.5px] leading-[1.8] text-ink-500">
-          Every GLANCE account carries exactly one role. The role decides which
-          pages open after sign in and which records the account can change.
-          Nothing else needs to be configured per person.
-        </p>
-      </header>
+      <header className="relative overflow-hidden rounded-2xl bg-navy-950 p-6 text-white shadow-[0_30px_60px_-30px_rgba(4,13,26,0.8)] sm:p-8">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -top-24 right-0 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(234,174,20,0.18),transparent_70%)] blur-2xl"
+            />
+            <p className="text-[10.5px] font-bold tracking-[0.2em] text-gold-400 uppercase">
+              Access model
+            </p>
+            <h1 className="mt-2 text-[30px] leading-[1.12] font-bold tracking-[-0.02em]">
+              Roles and access
+            </h1>
+            <p className="mt-3 max-w-[680px] text-[13.5px] leading-[1.8] text-white/70">
+              Every GLANCE account carries exactly one role. The role decides which
+              pages open after sign in and which records the account can change.
+              Nothing else needs to be configured per person.
+            </p>
+          </header>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+          <div
+            data-stagger=""
+            className="grid gap-4 lg:grid-cols-2"
+          >
         {order.map((role, index) => {
           const detail = DETAIL[role]!
           const meta = ROLES[role];
@@ -101,7 +108,7 @@ export default async function RolesPage() {
           return (
             <section
               key={role}
-              className={`rise rounded-xl border bg-white p-5 ${
+              className={`card-lift rounded-2xl border bg-white p-5 shadow-[0_1px_2px_rgba(5,42,92,0.06),0_18px_40px_-28px_rgba(5,42,92,0.35)] ${
                 isYou ? "border-gold-300 ring-1 ring-gold-200" : "border-line"
               }`}
               style={{ "--d": `${80 + index * 70}ms` } as React.CSSProperties}

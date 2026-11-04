@@ -41,17 +41,31 @@ export function SectionHeading({ eyebrow, title, accent, intro, tone = "dark", a
   className?: string;
 }) {
   return (
-    <div className={className}>
+    <div className={`relative ${className ?? ""}`}>
+      {/* A premium opening band on dark backgrounds: soft gold bloom behind the
+          headline so every portal screen opens with the same depth. */}
+      {tone === "light" ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-16 left-0 h-56 w-[420px] max-w-full rounded-full bg-[radial-gradient(circle,rgba(234,174,20,0.16),transparent_70%)] blur-3xl"
+        />
+      ) : null}
+      <div className="relative">
       {eyebrow ? <Eyebrow tone={tone}>{eyebrow}</Eyebrow> : null}
       <Tag className={`mt-3 text-[26px] leading-[1.2] font-extrabold tracking-[-0.015em] sm:text-[32px] ${tone === "light" ? "text-white" : "text-navy-900"}`}>
         {title}
         {accent ? <span className={`block ${tone === "light" ? "text-gold-400" : "text-gold-500"}`}>{accent}</span> : null}
       </Tag>
+      <div
+        aria-hidden="true"
+        className="mt-3 h-[2px] w-24 rounded-full bg-gradient-to-r from-gold-400 via-gold-400/50 to-transparent"
+      />
       {intro ? (
         <div className={`mt-4 space-y-4 text-[15px] leading-[1.85] ${tone === "light" ? "text-navy-100/85" : "text-ink-500"}`}>
           {intro}
         </div>
       ) : null}
+      </div>
     </div>
   );
 }
