@@ -13,6 +13,10 @@ import {
   setChapterStatus,
 } from "@/server/lifecycle";
 import {
+  joinApplicationRejectedEmail,
+  sendTransactionalEmail,
+} from "@/server/email";
+import {
   chapterSchema,
   invitationSchema,
   memberUpdateSchema,
@@ -297,6 +301,16 @@ export async function reviewChapterApplicationAction(
       },
     });
 
+    // The contact hears the decision too — nobody waits on an answer that has
+    // already been made. Delivery is best-effort: the record is final either way.
+    await sendTransactionalEmail(
+      joinApplicationRejectedEmail({
+        to: application.contactEmail,
+        name: application.contactName,
+        note: reviewNotes,
+      })
+    );
+
     await writeAudit({
       actorId: actor.id,
       actorRole: actor.role,
@@ -440,6 +454,16 @@ export async function reviewJoinApplicationAction(
       ip,
       metadata: { decision: "rejected" },
     });
+
+    // The applicant hears the decision too — nobody waits on an answer that
+    // has already been made. Delivery is best-effort: the record is final.
+    await sendTransactionalEmail(
+      joinApplicationRejectedEmail({
+        to: application.email,
+        name: application.fullName,
+        note: reviewNotes,
+      })
+    );
 
     revalidatePath("/portal/applications");
     return {

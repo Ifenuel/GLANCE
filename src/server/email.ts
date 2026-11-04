@@ -323,6 +323,29 @@ export function joinApplicationReceivedEmail(input: {
   };
 }
 
+/** Sent when a membership application is reviewed and not approved, so the
+ * applicant is never left waiting on an answer. Approvers may include a short
+ * review note as the closing line. */
+export function joinApplicationRejectedEmail(input: {
+  to: string;
+  name: string;
+  note?: string | null;
+}): MailPayload {
+  const note = (input.note ?? "").trim();
+  return {
+    to: input.to,
+    workflow: "glance-join-rejected",
+    subject: "Your GLANCE membership application",
+    heading: "Update on your application",
+    body: [
+      `Hello ${input.name},`,
+      "Thank you for applying to join GLANCE. After review, your application was not approved this time.",
+      "This is not a permanent decision — you are welcome to apply again, especially once a chapter is active at your institution.",
+      ...(note ? [`Review note from the GLANCE team: ${note}`] : []),
+    ],
+  };
+}
+
 /** Sent to the chapter's submitted contact email the moment the GLANCE team
  * activates the chapter, so the coordinator learns they are live. */
 export function chapterActivatedEmail(input: {

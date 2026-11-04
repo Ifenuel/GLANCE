@@ -167,6 +167,26 @@ export const EDITABLE_PAGES: EditablePage[] = [
       { name: "formTitle", label: "Message form — title", max: 100 },
     ],
   },
+  {
+    key: "impact",
+    label: "Impact page",
+    path: "/impact",
+    fields: [
+      ...headerFields,
+      {
+        name: "statsTitle",
+        label: "Numbers panel — title",
+        max: 100,
+      },
+      {
+        name: "storyIntro",
+        label: "Impact story — intro",
+        hint: "Leave a blank line between paragraphs. Empty = built-in copy.",
+        multiline: true,
+        max: 900,
+      },
+    ],
+  },
   { key: "chapters", label: "Chapters directory", path: "/chapters", fields: headerFields },
   { key: "gallery", label: "Gallery page", path: "/gallery", fields: headerFields },
   { key: "alumni", label: "Alumni page", path: "/alumni", fields: headerFields },

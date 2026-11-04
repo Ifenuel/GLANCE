@@ -323,6 +323,8 @@ export async function attachAvatarAction(
           height: asset.height,
           ownerId: user.id,
           chapterId: user.chapterId,
+          // A profile photo is private to its member — never gallery content.
+          published: false,
         },
       });
     }),

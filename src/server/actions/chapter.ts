@@ -127,6 +127,23 @@ export async function submitActivityReportAction(
     return { status: "error", message: "Check the report details.", errors: parsed.errors };
   }
 
+  // Optional chapter photos: uploaded straight to Cloudinary from the form
+  // (each under 1 MB), then verified here — a client-sent URL is never saved.
+  const rawPublicIds = formData
+    .getAll("imagePublicIds")
+    .map((entry) => String(entry).trim())
+    .filter(Boolean)
+    .slice(0, 3);
+  const attachments: { publicId: string; url: string }[] = [];
+  for (const publicId of rawPublicIds) {
+    const asset = await verifyUploadedAsset({
+      publicId,
+      expectedFolder: "report-media",
+    });
+    if (!asset || !asset.publicId.includes(chapter.id)) continue;
+    attachments.push({ publicId: asset.publicId, url: asset.secureUrl });
+  }
+
   const report = await db.activityReport.create({
     data: {
       chapterId: chapter.id,
@@ -135,6 +152,7 @@ export async function submitActivityReportAction(
       summary: parsed.data.summary,
       activityDate: new Date(`${parsed.data.activityDate}T00:00:00.000Z`),
       attendeeCount: parsed.data.attendeeCount ?? null,
+      attachments: attachments.length > 0 ? attachments : undefined,
     },
     select: { id: true },
   });
@@ -313,6 +331,9 @@ export async function attachChapterLogoAction(
           height: asset.height,
           ownerId: user.id,
           chapterId: chapter.id,
+          // A chapter logo identifies the chapter in the portal — never a
+          // public gallery item.
+          published: false,
         },
       });
     }),

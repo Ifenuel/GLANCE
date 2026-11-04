@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Manrope, Plus_Jakarta_Sans } from "next/font/google";
 import { SITE_URL } from "@/lib/site";
+import { PremiumMotion } from "@/components/site/premium-motion";
 import "./globals.css";
 
 /**
@@ -103,6 +104,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           }}
         />
         {children}
+        <PremiumMotion />
       </body>
     </html>
   );

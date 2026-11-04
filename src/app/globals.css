@@ -1203,3 +1203,72 @@ html.intro-waiting .site-stage {
 }
 
 
+
+/* ── Premium interaction layer (additive; no existing rules changed) ───── */
+@media (prefers-reduced-motion: no-preference) {
+  .site-stage *, .site-stage { scroll-behavior: initial; }
+
+  /* Cards lift quietly on hover, with a longer, weighted ease. */
+  .card-lift { transition: transform .45s cubic-bezier(.19,1,.22,1), box-shadow .45s cubic-bezier(.19,1,.22,1), border-color .3s ease; }
+  .card-lift:hover { transform: translateY(-4px); }
+
+  /* Buttons get a fine gold focus ring and a gentle press. */
+  :where(button, a, [role=button]):focus-visible {
+    outline: 2px solid rgba(234,174,20,.9);
+    outline-offset: 2px;
+    border-radius: 10px;
+  }
+  button:active { transform: translateY(0.5px); }
+
+  /* Inputs sharpen on focus with a navy ring instead of the generic blue. */
+  input:focus-visible, textarea:focus-visible, select:focus-visible {
+    box-shadow: 0 0 0 3px rgba(10,37,80,.08);
+  }
+
+  /* Media frames zoom their photo a whisper on hover. */
+  .media-zoom img, figure[class*="rounded"] img { transition: transform .8s cubic-bezier(.19,1,.22,1); }
+  figure[class*="rounded"]:hover .media-zoom img,
+  .media-zoom:hover img { transform: scale(1.03); }
+}
+
+/* ── Premium card treatment for statement surfaces (login/gate) ────────── */
+.card-premium {
+  position: relative;
+}
+.card-premium::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(115deg, rgba(234,174,20,0.16) 0%, transparent 32%, transparent 68%, rgba(234,174,20,0.10) 100%);
+  mix-blend-mode: screen;
+}
+
+/* ── Portal surface treatment: shared Card/Kpi/StatBlock/DataTable get the
+   premium depth everywhere at once, no per-page edits. ──────────────────── */
+.card-premium-light {
+  position: relative;
+}
+.card-premium-light::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(234,174,20,0.05) 0%, transparent 18%);
+}
+
+/* ── Portal panel guarantee: every "rounded-xl border-line bg-white" panel
+   (dashboard KPIs, audit table shell and similar local components) inherits
+   the premium depth even where a page builds its own card markup. ──────── */
+@media (prefers-reduced-motion: no-preference) {
+  .rounded-xl.border.border-line.bg-white,
+  .rounded-2xl.border.border-line.bg-white {
+    box-shadow: 0 1px 2px rgba(5, 42, 92, 0.06), 0 18px 40px -28px rgba(5, 42, 92, 0.35);
+    transition: transform 0.45s cubic-bezier(0.19, 1, 0.22, 1), box-shadow 0.45s cubic-bezier(0.19, 1, 0.22, 1);
+  }
+  .rounded-xl.border.border-line.bg-white:hover {
+    transform: translateY(-2px);
+  }
+}

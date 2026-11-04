@@ -20,6 +20,16 @@ export default async function PortalMediaPage() {
 
   const items = await db.mediaAsset
     .findMany({
+      // Profile photos and chapter logos also live in this table (every
+      // Cloudinary upload is registered here) but they are personal or
+      // administrative media, not gallery content — keep them out of this
+      // list so they are never accidentally published or deleted from here.
+      where: {
+        NOT: [
+          { publicId: { startsWith: "glance/member-avatar/" } },
+          { publicId: { startsWith: "glance/chapter-logo/" } },
+        ],
+      },
       orderBy: [{ createdAt: "desc" }],
       take: 60,
       select: {
@@ -27,6 +37,7 @@ export default async function PortalMediaPage() {
         kind: true,
         providerId: true,
         secureUrl: true,
+        publicId: true,
         title: true,
         caption: true,
         published: true,
@@ -103,15 +114,25 @@ export default async function PortalMediaPage() {
                 <li key={item.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
                   <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-navy-50">
                     {item.kind === "VIDEO" && item.providerId ? (
-                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={`https://i.ytimg.com/vi/${item.providerId}/mqdefault.jpg`}
                         alt=""
                         className="h-full w-full object-cover"
                         loading="lazy"
                       />
+                    ) : item.kind === "VIDEO" ? (
+                      /* An Instagram/social film has no image file to show —
+                         drawing its share URL into an <img> is what made
+                         these rows show broken-image icons. */
+                      <span
+                        aria-hidden="true"
+                        className="flex h-full w-full items-center justify-center bg-gradient-to-br from-navy-900 to-violet-900 text-white"
+                      >
+                        <svg viewBox="0 0 24 24" className="h-6 w-6 fill-white">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </span>
                     ) : (
-                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={item.secureUrl}
                         alt=""

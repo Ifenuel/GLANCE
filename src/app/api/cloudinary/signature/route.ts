@@ -7,7 +7,8 @@ type Scope =
   | "member-avatar"
   | "gallery-media"
   | "post-cover"
-  | "event-video";
+  | "event-video"
+  | "report-media";
 
 /**
  * Issues a short-lived signature so an authenticated administrator can upload
@@ -38,7 +39,9 @@ export async function POST(request: Request) {
           ? "post-cover"
           : body.scope === "event-video"
             ? "event-video"
-            : "chapter-logo";
+            : body.scope === "report-media"
+              ? "report-media"
+              : "chapter-logo";
 
   // Every signed-in account may replace its own profile photo — staff carry
   // theirs on the account, members on the member record — so member-avatar is
@@ -47,6 +50,7 @@ export async function POST(request: Request) {
     scope !== "gallery-media" &&
     scope !== "post-cover" &&
     scope !== "member-avatar" &&
+    scope !== "report-media" &&
     user.role !== "CHAPTER_ADMIN" &&
     user.role !== "AGID_ADMIN"
   ) {
@@ -90,7 +94,9 @@ export async function POST(request: Request) {
           ? `post-${user.id}`
           : scope === "event-video"
             ? `event-${user.id}`
-            : `media-${user.id}`;
+            : scope === "report-media"
+              ? (user.chapterId ?? `report-${user.id}`)
+              : `media-${user.id}`;
 
   const signature = buildUploadSignature({ scope, ownerKey, kind });
   if (!signature) {

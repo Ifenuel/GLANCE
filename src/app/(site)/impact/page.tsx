@@ -5,7 +5,7 @@ import { ButtonLink } from "@/components/button-link";
 import { GLANCEBroadcastSection } from "@/components/home/broadcast";
 import { Reveal } from "@/components/site/reveal";
 import { Container } from "@/components/ui";
-import { platformSnapshot } from "@/server/content";
+import { getPageContent, platformSnapshot } from "@/server/content";
 
 export const metadata: Metadata = {
   title: "Our Impact",
@@ -43,7 +43,10 @@ const TIMELINE = [
 ];
 
 export default async function ImpactPage() {
-  const snapshot = await platformSnapshot();
+  const [snapshot, stored] = await Promise.all([
+    platformSnapshot(),
+    getPageContent("impact"),
+  ]);
 
   const stats = [
     { value: `${snapshot.activeChapters}+`, label: "Chapters activated" },
@@ -78,19 +81,18 @@ export default async function ImpactPage() {
             {/* The story beside the figures, at full width. */}
             <Reveal>
               <span className="text-xs font-bold uppercase tracking-[0.22em] text-gold-400">
-                Real people. Real change.
+                {stored.eyebrow || "Real people. Real change."}
               </span>
               <h1 className="mt-4 max-w-[640px] text-balance text-[clamp(32px,4.6vw,54px)] font-extrabold leading-[1.06] tracking-[-0.03em] text-white">
-                Measured in young leaders, not promises.
+                {stored.title || "Measured in young leaders, not promises."}
               </h1>
               <div
                 aria-hidden="true"
                 className="mt-6 h-px w-28 bg-gradient-to-r from-gold-400 via-gold-400/40 to-transparent"
               />
               <p className="mt-6 max-w-[540px] text-[15px] leading-[1.85] text-white/80">
-                Every figure GLANCE publishes comes straight from the movement:
-                chapters opened, members trained and states covered as the work
-                happens.
+                {stored.intro?.trim() ||
+                  "Every figure GLANCE publishes comes straight from the movement: chapters opened, members trained and states covered as the work happens."}
               </p>
               <div className="mt-9 flex flex-wrap gap-3">
                 <ButtonLink href="/gallery" variant="gold">
@@ -111,7 +113,7 @@ export default async function ImpactPage() {
             <Reveal delay={110}>
               <div className="sheen rounded-2xl border border-white/20 bg-white/[0.07] p-7 shadow-[0_46px_90px_-44px_rgba(2,10,28,0.95)] backdrop-blur-md sm:p-9">
                 <span className="text-xs font-bold uppercase tracking-[0.22em] text-gold-400">
-                  The movement in numbers
+                  {stored.statsTitle || "The movement in numbers"}
                 </span>
 
                 <dl className="mt-4">

@@ -129,64 +129,52 @@ export default async function AuditLogPage({
         }
       />
 
-      <div className="mt-8 flex flex-wrap items-center gap-2">
-        {ACTION_FILTERS.map((filter) => (
-          <Link
-            key={filter.label}
-            href={pageHref(params, {
-              action: filter.value || undefined,
-              limit,
-              offset: 0,
-              cursor: null,
-              stack: [],
-            })}
-            className={`rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition-colors ${
-              (action ?? "") === filter.value
-                ? "border-navy-900 bg-navy-900 text-white"
-                : "border-line bg-white text-navy-800 hover:border-navy-300"
-            }`}
+      {/* One compact selector per control instead of a scatter of buttons:
+          the activity filter and the row count both live in plain dropdowns. */}
+      <form
+        method="get"
+        action="/portal/audit"
+        className="mt-8 flex flex-wrap items-end gap-3"
+      >
+        <label className="block">
+          <span className="mb-1 block text-[11px] font-bold tracking-[0.08em] text-ink-400 uppercase">
+            Show
+          </span>
+          <select
+            name="action"
+            defaultValue={action ?? ""}
+            className="h-10 rounded-lg border border-line bg-white px-3 text-[13px] font-semibold text-navy-900 focus:border-navy-500 focus:outline-none"
           >
-            {filter.label}
-          </Link>
-        ))}
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-white px-4 py-3">
-        <p className="text-[12px] text-ink-500">
-          Rows{" "}
-          <span className="font-bold text-navy-900">
-            {(offset + 1).toLocaleString()}
-          </span>{" "}
-          to{" "}
-          <span className="font-bold text-navy-900">
-            {(offset + entries.length).toLocaleString()}
-          </span>{" "}
-          of the log
-        </p>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-[11px] font-bold tracking-[0.08em] text-ink-400 uppercase">
+            {ACTION_FILTERS.map((filter) => (
+              <option key={filter.label} value={filter.value}>
+                {filter.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-[11px] font-bold tracking-[0.08em] text-ink-400 uppercase">
             Rows
           </span>
-          {PAGE_SIZES.map((size) => (
-            <Link
-              key={size}
-              href={pageHref(params, {
-                limit: size,
-                offset: 0,
-                cursor: null,
-                stack: [],
-              })}
-              className={`h-8 min-w-[3rem] rounded-lg border px-3 text-[12px] font-bold transition-colors ${
-                size === limit
-                  ? "border-navy-900 bg-navy-900 text-white"
-                  : "border-line bg-white text-navy-800 hover:border-navy-300"
-              }`}
-            >
-              {size.toLocaleString()}
-            </Link>
-          ))}
-        </div>
-      </div>
+          <select
+            name="limit"
+            defaultValue={String(limit)}
+            className="h-10 rounded-lg border border-line bg-white px-3 text-[13px] font-semibold text-navy-900 focus:border-navy-500 focus:outline-none"
+          >
+            {PAGE_SIZES.map((size) => (
+              <option key={size} value={String(size)}>
+                {size.toLocaleString()}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="submit"
+          className="h-10 rounded-lg bg-navy-900 px-5 text-[13px] font-bold text-white hover:bg-navy-950"
+        >
+          Apply
+        </button>
+      </form>
 
       <div className="mt-4 overflow-x-auto rounded-xl border border-line bg-white">
         <table className="w-full min-w-[900px] border-collapse text-left">

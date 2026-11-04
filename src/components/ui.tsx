@@ -64,7 +64,7 @@ export function Card({ children, className, as: Tag = "div", title, label }: {
   label?: string;
 }) {
   return (
-    <Tag className={`rounded-xl border border-line bg-white p-5 transition-shadow hover:shadow-[0_18px_40px_-28px_rgba(5,42,92,0.5)] ${className ?? ""}`}>
+    <Tag className={`card-lift card-premium-light rounded-2xl border border-line bg-white p-5 shadow-[0_1px_2px_rgba(5,42,92,0.06),0_18px_40px_-28px_rgba(5,42,92,0.35)] ${className ?? ""}`}>
       {(title || label) ? <div className="mb-3">{(label ?? null) ?? (title ? <h3 className="text-[15px] font-extrabold text-navy-900">{title}</h3> : null)}</div> : null}
       {children}
     </Tag>
@@ -99,16 +99,20 @@ export function ButtonLink({ href, variant = "default", size = "md", className, 
   );
 }
 
-export function GLANCE({ className }: { className?: string }) {
+/**
+ * The real GLANCE emblem (silhouettes, swoosh and star) — used to be a
+ * hand-drawn placeholder; every page that renders <GLANCE /> now shows the
+ * actual brand mark at whatever height its className asks for.
+ */
+export function GLANCE({ className = "h-8 w-8" }: { className?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
   return (
-    <svg className={className} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <rect x="2" y="14" width="4" height="14" rx="2" fill="#0a1b38" />
-      <rect x="11" y="6" width="4" height="22" rx="2" fill="#f0b429" />
-      <rect x="20" y="14" width="4" height="14" rx="2" fill="#0a1b38" />
-      <path d="M13 26 L18 14 L23 26" stroke="#f0b429" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M13 26 L20 14 L23 26" stroke="#0a1b38" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="26" cy="10" r="2.4" fill="#f0b429" stroke="#0a1b38" strokeWidth="1.6" />
-    </svg>
+    <img
+      src="/_brand/glance-emblem.png"
+      alt=""
+      aria-hidden="true"
+      className={`h-auto w-auto ${className}`}
+    />
   );
 }
 
@@ -152,7 +156,7 @@ export function EmptyState({ title, description, action }: { title: string; desc
 
 export function Kpi({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
-    <div className="rounded-xl border border-line bg-white p-5">
+    <div className="card-lift card-premium-light rounded-2xl border border-line bg-white p-5 shadow-[0_1px_2px_rgba(5,42,92,0.06),0_18px_40px_-28px_rgba(5,42,92,0.35)]">
       <p className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-400">
         {label}
       </p>
@@ -166,7 +170,7 @@ export function Kpi({ label, value, hint }: { label: string; value: string | num
 
 export function StatBlock({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
-    <div className="rounded-xl border border-line bg-white px-5 py-4">
+    <div className="card-premium-light rounded-2xl border border-line bg-white px-5 py-4 shadow-[0_1px_2px_rgba(5,42,92,0.06),0_18px_40px_-28px_rgba(5,42,92,0.35)]">
       <p className="text-[11.5px] font-bold tracking-[0.1em] text-ink-500 uppercase">{label}</p>
       <p className="mt-2 text-[26px] leading-none font-extrabold text-navy-900">{value}</p>
       {hint ? <p className="mt-2 text-[12.5px] text-ink-500">{hint}</p> : null}
@@ -176,7 +180,7 @@ export function StatBlock({ label, value, hint }: { label: string; value: string
 
 export function DataTable({ head, children, caption }: { head: string[]; children: ReactNode; caption?: string }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-line bg-white">
+    <div className="overflow-x-auto rounded-2xl border border-line bg-white shadow-[0_1px_2px_rgba(5,42,92,0.06),0_18px_40px_-28px_rgba(5,42,92,0.3)]">
       <table className="w-full min-w-[720px] border-collapse text-left">
         {caption ? <caption className="border-b border-line px-4 py-3 text-left text-[12.5px] text-ink-500">{caption}</caption> : null}
         <thead>

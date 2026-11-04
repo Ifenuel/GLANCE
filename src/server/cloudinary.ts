@@ -48,7 +48,7 @@ const MAX_VIDEO_BYTES = 64 * 1024 * 1024;
  * allowance than pictures.
  */
 export function buildUploadSignature(input: {
-  scope: "chapter-logo" | "member-avatar" | "post-cover" | "gallery-media" | "event-video";
+  scope: "chapter-logo" | "member-avatar" | "post-cover" | "gallery-media" | "event-video" | "report-media";
   ownerKey: string;
   kind?: "image" | "video";
 }): UploadSignature | null {

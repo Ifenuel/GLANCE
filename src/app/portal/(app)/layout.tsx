@@ -134,7 +134,7 @@ export default async function PortalAppLayout({
             <UserAvatar
               name={user.name}
               email={user.email}
-              avatarUrl={user.profile?.avatarUrl ?? null}
+              avatarUrl={user.profile?.avatarUrl ?? user.avatarUrl ?? null}
               size={36}
             />
             <div className="min-w-0 flex-1">
@@ -183,7 +183,7 @@ export default async function PortalAppLayout({
                 <UserAvatar
                   name={user.name}
                   email={user.email}
-                  avatarUrl={user.profile?.avatarUrl ?? null}
+                  avatarUrl={user.profile?.avatarUrl ?? user.avatarUrl ?? null}
                   size={34}
                 />
               </Link>

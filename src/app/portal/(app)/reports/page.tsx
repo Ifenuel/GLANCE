@@ -10,6 +10,19 @@ export const metadata: Metadata = {
   description: "Submit and view chapter activity reports.",
 };
 
+/** Report attachments are stored as JSON by the submit action; a defensive
+ * reader keeps broken or malformed rows from crashing the whole page — which
+ * is what the broken-image icons on this page used to be. */
+function reportImages(value: unknown): { publicId: string; url: string }[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const item = entry as { publicId?: unknown; url?: unknown };
+    if (typeof item.publicId !== "string" || typeof item.url !== "string") return [];
+    return [{ publicId: item.publicId, url: item.url }];
+  });
+}
+
 export default async function ReportsPage({
   searchParams,
 }: {
@@ -48,6 +61,7 @@ export default async function ReportsPage({
       activityDate: true,
       attendeeCount: true,
       createdAt: true,
+      attachments: true,
       chapter: { select: { name: true, code: true } },
     },
   });
@@ -168,6 +182,10 @@ export default async function ReportsPage({
                 <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-emerald-400" />
                 <span>Summary for GLANCE and the network</span>
               </li>
+              <li className="flex gap-3">
+                <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span>Up to three photos from the event (each under 1 MB)</span>
+              </li>
             </ul>
           </div>
         </div>
@@ -205,6 +223,20 @@ export default async function ReportsPage({
                   <p className="text-[11.5px] font-mono text-ink-400">{formatDate(report.createdAt)}</p>
                 </div>
                 <p className="mt-2 text-[12.5px] leading-6 text-ink-500">{report.summary}</p>
+                {reportImages(report.attachments).length > 0 ? (
+                  <div className="mt-3 grid grid-cols-3 gap-2 sm:max-w-md">
+                    {reportImages(report.attachments).map((image) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={image.publicId}
+                        src={image.url}
+                        alt=""
+                        loading="lazy"
+                        className="h-24 w-full rounded-lg border border-line object-cover"
+                      />
+                    ))}
+                  </div>
+                ) : null}
               </Card>
             ))}
           </div>

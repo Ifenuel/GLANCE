@@ -21,7 +21,17 @@ export async function listPublishedMedia(): Promise<GalleryItem[]> {
   cacheLife("minutes");
   try {
     const rows = await db.mediaAsset.findMany({
-      where: { published: true },
+      where: {
+        published: true,
+        // Avatars and chapter logos live in Cloudinary too (every upload
+        // lands in this table), but they are personal/administration media,
+        // never public gallery content. Exclude those folders explicitly so
+        // a profile photo can never surface on the public site.
+        NOT: [
+          { publicId: { startsWith: "glance/member-avatar/" } },
+          { publicId: { startsWith: "glance/chapter-logo/" } },
+        ],
+      },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
       take: 60,
       select: {
@@ -29,6 +39,7 @@ export async function listPublishedMedia(): Promise<GalleryItem[]> {
         kind: true,
         secureUrl: true,
         providerId: true,
+        publicId: true,
         title: true,
         caption: true,
       },

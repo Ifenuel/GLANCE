@@ -44,9 +44,9 @@ export default function LoginPage() {
 
       {/* Main Login Interface (One unified interface matching the reference design) */}
       <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-12 sm:px-6">
-        <div className="w-full max-w-[460px]">
-          {/* Main Card */}
-          <div className="overflow-hidden rounded-2xl border border-white/[0.12] bg-[#081830]/90 p-7 sm:p-9 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] backdrop-blur-xl">
+        <div className="w-full max-w-[520px]">
+          {/* Main Card — premium depth: layered shadow, hairline gold ring, glass */}
+          <div className="card-premium overflow-hidden rounded-3xl border border-white/[0.12] bg-[#081830]/90 p-7 sm:p-9 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.75)] backdrop-blur-xl">
             {/* Logo inside card */}
             <div className="mb-6 flex flex-col items-center text-center">
               <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-xl bg-white/[0.06] border border-white/[0.1] shadow-inner transition-transform duration-500 hover:scale-105">
