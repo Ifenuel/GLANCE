@@ -36,7 +36,7 @@ export function ConsentBanner() {
     <div
       role="dialog"
       aria-label="Analytics consent"
-      className="fixed right-3 bottom-3 z-[60] max-w-[320px] rounded-xl border border-line bg-white p-3.5 shadow-[0_18px_44px_-24px_rgba(5,42,92,0.55)] sm:right-4 sm:bottom-4"
+      className="fixed right-3 bottom-3 z-[9999] max-w-[320px] rounded-xl border border-line bg-white p-3.5 shadow-[0_18px_44px_-24px_rgba(5,42,92,0.55)] sm:right-4 sm:bottom-4"
     >
       <p className="text-[10px] font-bold tracking-[0.12em] text-navy-900/60 uppercase">
         Privacy choice
