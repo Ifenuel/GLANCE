@@ -49,7 +49,8 @@ export const metadata: Metadata = {
   ],
   applicationName: "GLANCE",
   openGraph: {
-    title: "GLANCE: young people, real solutions, a stronger nation",
+    // No explicit title here: each page's own `title` becomes the share title,
+    // so an article or a chapter never posts as the generic homepage headline.
     description:
       "A youth leadership and civic engagement initiative equipping young Africans to understand, engage and build.",
     siteName: "GLANCE",
@@ -67,7 +68,6 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "GLANCE: young people, real solutions, a stronger nation",
     description:
       "A youth leadership and civic engagement initiative equipping young Africans to understand, engage and build.",
     images: ["/og.png"],

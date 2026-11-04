@@ -86,7 +86,28 @@ export function CinematicIntro() {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const seen = alreadyWelcomed();
 
-    const shouldPlay = !reduced && (forced || (!seen && pathname === "/"));
+    /*
+     * The film runs a real-time 3D building, which is the single heaviest thing
+     * on the site. On a low-end Android phone (the device most GLANCE visitors
+     * actually carry) that cost is not worth the welcome, so the film is
+     * skipped for devices that report little memory, few cores, data-saver or a
+     * 2G connection. Anyone can still request it with ?intro=1, and a device
+     * that is merely mid-range keeps the film at the capped pixel ratio set by
+     * the scene itself.
+     */
+    const nav = navigator as Navigator & {
+      deviceMemory?: number;
+      connection?: { saveData?: boolean; effectiveType?: string };
+    };
+    const lightDevice =
+      (typeof nav.deviceMemory === "number" && nav.deviceMemory <= 3) ||
+      (typeof navigator.hardwareConcurrency === "number" &&
+        navigator.hardwareConcurrency <= 4) ||
+      Boolean(nav.connection?.saveData) ||
+      /(^|-)2g/.test(nav.connection?.effectiveType ?? "");
+
+    const shouldPlay =
+      !reduced && (forced || (!lightDevice && !seen && pathname === "/"));
     if (!shouldPlay) {
       // Defensive release: the pre-paint gate in the root layout only hides
       // the stage for unwelcomed home visits, but if the class ever got set

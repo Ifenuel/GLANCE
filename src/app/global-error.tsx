@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { reportClientError } from "@/lib/report-error";
 
 /**
  * Last-resort boundary. It replaces the root layout, so it carries its own
@@ -16,6 +17,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error("[global] render failed", error);
+    reportClientError(error, "global");
   }, [error]);
 
   return (

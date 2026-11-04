@@ -1,0 +1,46 @@
+name: Nightly backup
+
+# Exports every table to one compressed file each night and keeps it as a
+# workflow artefact for 30 days. If Cloudinary secrets are present the file is
+# also stored in the media account's glance-backups/ folder, with copies older
+# than 30 days pruned automatically.
+#
+# Required repository secrets:
+#   DATABASE_URL            (the Supabase pooled connection string)
+# Optional, for off-site copies:
+#   CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+on:
+  schedule:
+    - cron: "15 1 * * *"
+  workflow_dispatch:
+
+jobs:
+  backup:
+    name: Export database
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run backup
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+        run: npm run db:backup
+
+      - name: Keep the backup as an artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: glance-db-backup
+          path: backups/*.json.gz
+          retention-days: 30
+          if-no-files-found: error

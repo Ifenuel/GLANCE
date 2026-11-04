@@ -54,6 +54,9 @@ const WORKFLOW_EYEBROWS: Record<string, string> = {
   "glance-email-change-confirmation": "Confirm your new address",
   "glance-email-changed-notice": "Security notice",
   "glance-activity-report": "Chapter activity report",
+  "glance-newsletter-confirm": "Newsletter subscription",
+  "glance-newsletter-welcome": "Newsletter subscription",
+  "glance-event-rsvp": "Event reservation",
 };
 
 function sender() {
@@ -303,6 +306,76 @@ export function passwordResetEmail(input: {
       "This link expires in 60 minutes. If you did not request it, you can ignore this message.",
     ],
     action: { label: "Set a new password", url: input.url },
+  };
+}
+
+/**
+ * Newsletter, step one: the visitor asked to be kept informed, so they must
+ * confirm the address before anything is ever sent to it. Nothing promotional
+ * goes out until this link is clicked.
+ */
+export function newsletterConfirmEmail(input: {
+  to: string;
+  url: string;
+}): MailPayload {
+  return {
+    to: input.to,
+    workflow: "glance-newsletter-confirm",
+    subject: "Confirm you want GLANCE updates",
+    heading: "One click to confirm",
+    body: [
+      "You asked to receive occasional updates from GLANCE — new chapters, events, programmes and openings.",
+      "Confirm your email address below and we will add you to the list.",
+      "If this was not you, ignore this message and nothing will be sent.",
+    ],
+    action: { label: "Confirm my subscription", url: input.url },
+  };
+}
+
+/** Newsletter, step two: sent once the address is confirmed, with a one-click
+ * way back out so leaving is as easy as joining. */
+export function newsletterWelcomeEmail(input: {
+  to: string;
+  unsubscribeUrl: string;
+}): MailPayload {
+  return {
+    to: input.to,
+    workflow: "glance-newsletter-welcome",
+    subject: "You are on the GLANCE list",
+    heading: "Welcome to the GLANCE list",
+    body: [
+      "Your email address is confirmed. You will hear from GLANCE when a chapter launches, when an event is open, and when programmes are accepting people.",
+      "We send rarely, and only when there is something worth your attention.",
+      `You can leave the list at any time: ${input.unsubscribeUrl}`,
+    ],
+    action: { label: "See what GLANCE is doing", url: SITE_URL },
+  };
+}
+
+/** The RSVP receipt. Carries the practical details and a cancel link, so a
+ * guest never has to write to the secretariat to change their plans. */
+export function rsvpConfirmedEmail(input: {
+  to: string;
+  name: string;
+  eventTitle: string;
+  when: string;
+  where: string;
+  cancelUrl: string;
+}): MailPayload {
+  return {
+    to: input.to,
+    workflow: "glance-event-rsvp",
+    subject: `Your place at ${input.eventTitle}`,
+    heading: "Your place is reserved",
+    body: [
+      `Hello ${input.name},`,
+      `You are on the list for ${input.eventTitle}.`,
+      `When: ${input.when}`,
+      `Where: ${input.where}`,
+      "Bring this email or your name; the chapter hosting the event will check you in.",
+      `If your plans change, cancel here: ${input.cancelUrl}`,
+    ],
+    action: { label: "Event details", url: `${SITE_URL}/events` },
   };
 }
 

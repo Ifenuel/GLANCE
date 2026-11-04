@@ -180,6 +180,21 @@ export const resetSchema = z
     path: ["confirmPassword"],
   });
 
+export const subscribeSchema = z.object({
+  email,
+  name: z.string().trim().max(120).optional().or(z.literal("")),
+  // Where on the site the visitor subscribed, e.g. "footer" or "events".
+  source: z.string().trim().max(40).optional().or(z.literal("")),
+});
+
+export const rsvpSchema = z.object({
+  eventId: z.string().trim().min(1, "Choose an event"),
+  name,
+  email,
+  phone: phone.optional().or(z.literal("")),
+  guests: z.coerce.number().int().min(0, "Guests cannot be negative").max(10, "Ten guests maximum"),
+});
+
 export type FormState = {
   status: "idle" | "success" | "error";
   message?: string;

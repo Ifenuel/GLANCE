@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { ButtonLink } from "@/components/button-link";
+import { RsvpForm } from "@/components/forms/rsvp-form";
 import { ClockIcon, PinIcon } from "@/components/icons";
 import { PageHeader } from "@/components/site/page-header";
 import { pageBackgrounds } from "@/lib/page-backgrounds";
@@ -88,7 +89,7 @@ export const metadata: Metadata = {
 export default async function EventsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; rsvp?: string }>;
 }) {
   // The secretariat's editable intro and header photograph; nulls fall back to
   // the built-in copy and still below.
@@ -126,9 +127,9 @@ export default async function EventsPage({
 async function EventsResults({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; rsvp?: string }>;
 }) {
-  const { page: pageParam } = await searchParams;
+  const { page: pageParam, rsvp } = await searchParams;
   const page = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
   const [upcoming, past] = await Promise.all([
     listUpcomingEvents(12),
@@ -140,6 +141,23 @@ async function EventsResults({
     <>
       <Section>
         <Container>
+          {rsvp === "cancelled" ? (
+            <p
+              role="status"
+              className="mb-8 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] font-semibold text-emerald-800"
+            >
+              Your reservation has been cancelled. You can reserve again at any
+              time.
+            </p>
+          ) : null}
+          {rsvp === "invalid" ? (
+            <p
+              role="alert"
+              className="mb-8 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] font-semibold text-rose-700"
+            >
+              That cancellation link has already been used or has expired.
+            </p>
+          ) : null}
           <SectionHeading eyebrow="Upcoming" title="What is coming up" />
           <div className="mt-8">
             {upcoming.length === 0 ? (
@@ -200,7 +218,9 @@ async function EventsResults({
                       >
                         Registration details
                       </ButtonLink>
-                    ) : null}
+                    ) : (
+                      <RsvpForm eventId={event.id} eventTitle={event.title} />
+                    )}
                   </li>
                 ))}
               </ul>

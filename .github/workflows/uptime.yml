@@ -1,0 +1,36 @@
+name: Uptime
+
+# Pings the site's health endpoint every 15 minutes. GitHub emails the
+# repository owner when a scheduled run fails, so a broken deploy is noticed
+# before a visitor reports it.
+#
+# Set a repository variable HEALTH_URL when the custom domain goes live
+# (Settings → Secrets and variables → Actions → Variables). Until then the
+# current deployment is checked.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Health endpoint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check /api/health
+        env:
+          HEALTH_URL: ${{ vars.HEALTH_URL || 'https://glance-mu-nine.vercel.app/api/health' }}
+        run: |
+          # Three attempts, 20s apart: a cold start or a single failed edge
+          # request should not wake anyone up.
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt: $HEALTH_URL"
+            if curl -fsS --max-time 20 "$HEALTH_URL"; then
+              echo ""
+              echo "Site is healthy."
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::GLANCE health check failed three times — the site or its database is down."
+          exit 1

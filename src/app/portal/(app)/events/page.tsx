@@ -34,6 +34,7 @@ export default async function PortalEventsPage() {
         videoUrl: true,
         registrationUrl: true,
         chapter: { select: { name: true } },
+        _count: { select: { rsvps: { where: { status: "CONFIRMED" } } } },
       },
     })
     .catch(() => []);
@@ -117,6 +118,14 @@ export default async function PortalEventsPage() {
                       </Badge>
                       {event.videoUrl ? <Badge tone="navy">Video</Badge> : null}
                       {event.startsAt < now ? <Badge tone="neutral">Past</Badge> : null}
+                      <Link
+                        href={`/portal/events/${event.id}/rsvps`}
+                        className="text-[11.5px] font-bold text-navy-800 underline decoration-gold-400 decoration-2 underline-offset-4 hover:text-navy-950"
+                      >
+                        {event._count.rsvps === 0
+                          ? "No reservations"
+                          : `${event._count.rsvps} reserved`}
+                      </Link>
                     </div>
                     <p className="mt-1 text-[12px] text-ink-500">
                       {formatDateTime(event.startsAt)} · {event.location}

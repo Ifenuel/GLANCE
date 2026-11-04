@@ -77,3 +77,10 @@ next-env.d.ts
 
 # freebuff chat attachments (session screenshots saved into the workspace)
 /.cloud-attachments/
+
+# database backups (never commit a dump)
+/backups/
+
+# local build/run logs
+build.log
+server.log

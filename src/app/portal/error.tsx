@@ -2,13 +2,20 @@
 
 import { GlanceMark } from "@/components/glance-logo";
 import Link from "next/link";
+import { useEffect } from "react";
+import { reportClientError } from "@/lib/report-error";
 
 /**
  * Error boundary for the whole portal. The copy is deliberately short and
  * confident: it says what happened to the action and what to do next, without
  * exposing infrastructure language to a member or an officer.
  */
-export default function PortalError({ reset }: { error: Error; reset: () => void }) {
+export default function PortalError({ error, reset }: { error: Error; reset: () => void }) {
+  useEffect(() => {
+    console.error("[portal] page error", error);
+    reportClientError(error, "portal");
+  }, [error]);
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#f6f8fb] px-5 py-16">
       <div className="w-full max-w-[420px] text-center">

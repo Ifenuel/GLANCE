@@ -5,6 +5,7 @@ import { MailIcon } from "@/components/icons";
 import { brand } from "@/lib/glance";
 import { footerColumns, socialLinks } from "@/lib/nav";
 import { AnalyticsConsentToggle } from "@/components/site/analytics-consent-toggle";
+import { SubscribeForm } from "@/components/forms/subscribe-form";
 
 /**
  * A calm, compact footer: the gold conversion band, then one quiet dark
@@ -81,6 +82,22 @@ export function SiteFooter() {
                 </ul>
               </nav>
             ))}
+          </div>
+        </div>
+
+        {/* Stay-informed strip: the low-friction list, above the legal bar. */}
+        <div className="border-t border-white/10">
+          <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-5 px-5 py-7 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+            <div className="max-w-[420px]">
+              <h2 className="text-[14px] font-bold text-white">
+                Stay informed
+              </h2>
+              <p className="mt-1 text-[12.5px] leading-[1.7] text-white/65">
+                New chapters, events and programmes — a few emails a year. Leave
+                any time.
+              </p>
+            </div>
+            <SubscribeForm source="footer" />
           </div>
         </div>
 

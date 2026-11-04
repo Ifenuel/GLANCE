@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import { reportClientError } from "@/lib/report-error";
 
 /**
  * Public error boundary. The visitor sees one calm sentence and a way forward;
@@ -16,6 +17,7 @@ export default function SiteError({
 }) {
   useEffect(() => {
     console.error("[site] page error", error);
+    reportClientError(error, "site");
   }, [error]);
 
   return (

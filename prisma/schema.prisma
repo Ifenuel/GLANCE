@@ -251,8 +251,75 @@ model Event {
   updatedAt       DateTime    @updatedAt
   videoUrl        String?
   chapter         Chapter?    @relation(fields: [chapterId], references: [id])
+  rsvps           EventRsvp[]
 
   @@index([status, startsAt])
+}
+
+/**
+ * A public RSVP to a published event. One row per person per event; the token
+ * lets the guest cancel from their confirmation email without signing in.
+ */
+model EventRsvp {
+  id        String     @id @default(cuid())
+  eventId   String
+  name      String
+  email     String
+  phone     String?
+  guests    Int        @default(0)
+  status    RsvpStatus @default(CONFIRMED)
+  token     String     @unique
+  ip        String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, email])
+  @@index([eventId, status])
+  @@index([createdAt])
+}
+
+/**
+ * The "keep me informed" list. Double opt-in: a row starts PENDING and only
+ * becomes CONFIRMED when the visitor clicks the link in the confirmation mail,
+ * so nobody can subscribe an address they do not control.
+ */
+model Subscriber {
+  id               String           @id @default(cuid())
+  email            String           @unique
+  name             String?
+  source           String?
+  status           SubscriberStatus @default(PENDING)
+  confirmToken     String           @unique
+  unsubscribeToken String           @unique
+  ip               String?
+  consentAt        DateTime         @default(now())
+  confirmedAt      DateTime?
+  unsubscribedAt   DateTime?
+  createdAt        DateTime         @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+/**
+ * Aggregated runtime errors. Repeats of the same fingerprint bump `count`
+ * rather than growing the table, which keeps it readable during an incident.
+ */
+model ErrorLog {
+  id          String   @id @default(cuid())
+  fingerprint String   @unique
+  message     String
+  stack       String?
+  path        String?
+  source      String   @default("server")
+  role        String?
+  userAgent   String?
+  count       Int      @default(1)
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  @@index([lastSeenAt])
 }
 
 model ContactMessage {
@@ -433,6 +500,17 @@ enum EventStatus {
   DRAFT
   PUBLISHED
   CANCELLED
+}
+
+enum RsvpStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum SubscriberStatus {
+  PENDING
+  CONFIRMED
+  UNSUBSCRIBED
 }
 
 enum MediaKind {
