@@ -83,6 +83,12 @@ const items: PortalItem[] = [
     group: "Content",
   },
   {
+    label: "Subscribers",
+    href: "/portal/subscribers",
+    roles: ["SUPER_ADMIN", "AGID_ADMIN", "COMM_MANAGER"],
+    group: "Content",
+  },
+  {
     label: "Media gallery",
     href: "/portal/media",
     roles: ["SUPER_ADMIN", "AGID_ADMIN", "COMM_MANAGER"],
@@ -110,6 +116,12 @@ const items: PortalItem[] = [
     label: "Roles and access",
     href: "/portal/roles",
     roles: ["SUPER_ADMIN", "AGID_ADMIN", "CHAPTER_ADMIN"],
+    group: "Administration",
+  },
+  {
+    label: "System health",
+    href: "/portal/health",
+    roles: ["SUPER_ADMIN", "AGID_ADMIN"],
     group: "Administration",
   },
   {
@@ -222,6 +234,19 @@ function NavIcon({ label, className }: { label: string; className?: string }) {
         <svg {...common}>
           <rect x="3" y="5" width="18" height="16" rx="2" />
           <path d="M8 3v4M16 3v4M3 10h18" />
+        </svg>
+      );
+    case "Subscribers":
+      return (
+        <svg {...common}>
+          <path d="M3 6.5h18v11a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z" />
+          <path d="m3.6 7 8.4 6 8.4-6" />
+        </svg>
+      );
+    case "System health":
+      return (
+        <svg {...common}>
+          <path d="M3 12h4l2.5-6 4 12L16 12h5" />
         </svg>
       );
     case "Media gallery":
