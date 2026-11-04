@@ -174,6 +174,77 @@ function makePlaqueTexture(title: string, subline: string, small = false) {
   return texture;
 }
 
+/**
+ * The “LEADING AT 27” plaque carries the real book cover instead of words.
+ * The canvas paints the frame and title straight away; when the book image
+ * arrives (a few kilobytes of WebP, usually already cached from the homepage
+ * hero) it is drawn in and the texture refreshes in place.
+ */
+function makeBookPlaqueTexture(small = false) {
+  const canvas = document.createElement("canvas");
+  canvas.width = small ? 384 : 640;
+  canvas.height = small ? 240 : 400;
+  const scale = canvas.width / 640;
+  const ctx = canvas.getContext("2d")!;
+
+  ctx.fillStyle = "#04122a";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "#EAAE14";
+  ctx.lineWidth = 10 * scale;
+  ctx.strokeRect(14 * scale, 14 * scale, canvas.width - 28 * scale, canvas.height - 28 * scale);
+  ctx.lineWidth = 3 * scale;
+  ctx.strokeRect(38 * scale, 38 * scale, canvas.width - 76 * scale, canvas.height - 76 * scale);
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#F5C15C";
+  ctx.font = `900 ${Math.round(50 * scale)}px Georgia, 'Times New Roman', serif`;
+  ctx.fillText("LEADING AT 27", canvas.width / 2, 92 * scale);
+
+  ctx.fillStyle = "rgba(245,193,92,0.8)";
+  ctx.font = `700 ${Math.round(24 * scale)}px Arial, sans-serif`;
+  ctx.fillText(
+    "THE BOOK BEHIND THE CLUB",
+    canvas.width / 2,
+    canvas.height - 42 * scale,
+  );
+
+  const drawBook = (img: HTMLImageElement) => {
+    try {
+      const innerTop = 136 * scale;
+      const innerBottom = canvas.height - 64 * scale;
+      const innerW = canvas.width - 100 * scale;
+      const innerH = innerBottom - innerTop;
+      const fit = Math.min(innerW / img.width, innerH / img.height);
+      const w = img.width * fit;
+      const h = img.height * fit;
+      // A whisper of plate behind it so the cover edge reads cleanly on dusk navy.
+      ctx.fillStyle = "#f8f6f2";
+      ctx.fillRect(
+        canvas.width / 2 - w / 2 - 7 * scale,
+        innerTop - 7 * scale,
+        w + 14 * scale,
+        h + 14 * scale,
+      );
+      ctx.drawImage(img, canvas.width / 2 - w / 2, innerTop, w, h);
+    } catch {
+      // If drawing fails, the plaque keeps its title-only layout.
+    }
+    texture.needsUpdate = true;
+  };
+
+  const img = new Image();
+  img.onload = () => drawBook(img);
+  img.src = "/media/leading-at-27-book.webp";
+  if (img.complete && img.naturalWidth > 0) drawBook(img);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
+
 const STONE = "#183560";
 const STONE_LIGHT = "#173a68";
 const GOLD_TRIM = { color: "#c98f10", emissive: "#EAAE14", emissiveIntensity: 0.28, metalness: 0.85, roughness: 0.35 } as const;
@@ -293,8 +364,11 @@ function StationBuilding({
 }) {
   const station = STATIONS[index];
   const plaque = useMemo(
-    () => makePlaqueTexture(station.title, station.subline, low),
-    [station.title, station.subline, low],
+    () =>
+      station.kind === "arch"
+        ? makeBookPlaqueTexture(low)
+        : makePlaqueTexture(station.title, station.subline, low),
+    [station.title, station.subline, station.kind, low],
   );
 
   return (
@@ -654,17 +728,44 @@ function prefersLighterScene() {
   if (typeof window === "undefined") return false;
   const coarse = window.matchMedia?.("(pointer: coarse)").matches ?? false;
   const narrow = window.matchMedia?.("(max-width: 820px)").matches ?? false;
-  const cores = navigator.hardwareConcurrency ?? 8;
-  const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
-  return narrow || (coarse && (cores <= 6 || memory <= 4));
+  // WebKit on macOS, iOS and iPadOS is by far the slowest WebGL engine at
+  // this scene — iPads even advertise 8 cores, so asking about hardware is
+  // meaningless there. Every touch device and every Safari build gets the
+  // lightweight tier up front; the frame watchdog below adds real proof.
+  const ua = navigator.userAgent;
+  const isSafari = /Safari/.test(ua) && !/Chrom(e|ium)|Edg|OPR|Firefox/.test(ua);
+  return narrow || coarse || isSafari;
+}
+
+/**
+ * Real proof the guesswork can miss: while the heavy tier runs, this watches
+ * the frame clock and calls for the lightweight tier once measured frames
+ * say the device cannot hold roughly 30fps. Slow devices then drop to the
+ * smooth tier within the first couple of seconds, whatever browser they are.
+ */
+function FrameWatchdog({ onSlow }: { onSlow: () => void }) {
+  const frames = useRef(0);
+  const started = useRef<number | null>(null);
+  const reported = useRef(false);
+
+  useFrame(() => {
+    if (reported.current) return;
+    frames.current += 1;
+    if (started.current === null) started.current = performance.now();
+    const elapsed = performance.now() - started.current;
+    if (elapsed < 2500) return;
+    reported.current = true;
+    const fps = (frames.current * 1000) / elapsed;
+    if (fps < 28) onSlow();
+  });
+
+  return null;
 }
 
 export function IntroBuildingScene() {
-  const [low, setLow] = useState(false);
-
-  useEffect(() => {
-    setLow(prefersLighterScene());
-  }, []);
+  // Decide the tier on the very first client render, not after an effect —
+  // a phone must never pay for one frame of the heavy renderer.
+  const [low, setLow] = useState(prefersLighterScene);
 
   return (
     <Canvas
@@ -699,6 +800,7 @@ export function IntroBuildingScene() {
 
       <CameraRig />
       <BuildingScene low={low} />
+      {!low && <FrameWatchdog onSlow={() => setLow(true)} />}
 
       {/* Procedural environment: glass picks up warm streets and cool sky
           without downloading any HDRI. */}

@@ -1,8 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { Prisma } from "@prisma/client";
-import { db } from "@/server/db";
+import { db, withRetry } from "@/server/db";
 import { requireUser } from "@/server/auth";
 import { requestIp, writeAudit } from "@/server/audit";
 import { verifyUploadedAsset } from "@/server/cloudinary";
@@ -233,31 +232,37 @@ export async function updateOwnProfileAction(
   }
 
   const data = parsed.data;
+  const profile = user.profile;
 
-  await db.$transaction([
-    db.memberProfile.update({
-      where: { id: user.profile.id },
-      data: {
-        fullName: data.fullName,
-        institution: data.institution,
-        department: data.department || null,
-        academicLevel: data.academicLevel || null,
-        gender: data.gender,
-        membershipCategory: data.membershipCategory,
-      },
+  // The db accessors return retry-wrapped promises, which array-form
+  // transactions reject; run both writes inside a callback transaction and
+  // keep the same “either both succeed or neither does” guarantee.
+  await withRetry(() =>
+    db.$transaction(async (tx) => {
+      await tx.memberProfile.update({
+        where: { id: profile.id },
+        data: {
+          fullName: data.fullName,
+          institution: data.institution,
+          department: data.department || null,
+          academicLevel: data.academicLevel || null,
+          gender: data.gender,
+          membershipCategory: data.membershipCategory,
+        },
+      });
+      await tx.user.update({
+        where: { id: user.id },
+        data: { name: data.fullName, phone: data.phone || null },
+      });
     }),
-    db.user.update({
-      where: { id: user.id },
-      data: { name: data.fullName, phone: data.phone || null },
-    }),
-  ]);
+  );
 
   await writeAudit({
     actorId: user.id,
     actorRole: user.role,
     action: "member.self_update",
     entityType: "MemberProfile",
-    entityId: user.profile.id,
+    entityId: profile.id,
     ip,
   });
 
@@ -288,41 +293,40 @@ export async function attachAvatarAction(
     return { status: "error", message: "That upload could not be verified." };
   }
 
-  const writes: Prisma.PrismaPromise<unknown>[] = [];
-  if (user.profile) {
-    writes.push(
-      db.memberProfile.update({
-        where: { id: user.profile.id },
-        data: { avatarUrl: asset.secureUrl, avatarPublicId: asset.publicId },
-      }),
-    );
-  } else {
-    writes.push(
-      db.user.update({
-        where: { id: user.id },
-        data: { avatarUrl: asset.secureUrl, avatarPublicId: asset.publicId },
-      }),
-    );
-  }
-  writes.push(
-    db.mediaAsset.upsert({
-      where: { publicId: asset.publicId },
-      update: { secureUrl: asset.secureUrl },
-      create: {
-        publicId: asset.publicId,
-        assetId: asset.assetId,
-        secureUrl: asset.secureUrl,
-        format: asset.format,
-        bytes: asset.bytes,
-        width: asset.width,
-        height: asset.height,
-        ownerId: user.id,
-        chapterId: user.chapterId,
-      },
+  // One atomic write set; a callback transaction is required here because
+  // the shared db ref hands out retry-wrapped plain promises that the
+  // array-form `$transaction` API rejects.
+  const profile = user.profile;
+  await withRetry(() =>
+    db.$transaction(async (tx) => {
+      if (profile) {
+        await tx.memberProfile.update({
+          where: { id: profile.id },
+          data: { avatarUrl: asset.secureUrl, avatarPublicId: asset.publicId },
+        });
+      } else {
+        await tx.user.update({
+          where: { id: user.id },
+          data: { avatarUrl: asset.secureUrl, avatarPublicId: asset.publicId },
+        });
+      }
+      await tx.mediaAsset.upsert({
+        where: { publicId: asset.publicId },
+        update: { secureUrl: asset.secureUrl },
+        create: {
+          publicId: asset.publicId,
+          assetId: asset.assetId,
+          secureUrl: asset.secureUrl,
+          format: asset.format,
+          bytes: asset.bytes,
+          width: asset.width,
+          height: asset.height,
+          ownerId: user.id,
+          chapterId: user.chapterId,
+        },
+      });
     }),
   );
-
-  await db.$transaction(writes);
 
   await writeAudit({
     actorId: user.id,

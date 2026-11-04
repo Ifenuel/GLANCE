@@ -109,7 +109,7 @@ function isTransient(error: unknown): boolean {
   );
 }
 
-async function withRetry<T>(fn: () => Promise<T>, attempts = 4): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, attempts = 4): Promise<T> {
   let lastError: unknown;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {

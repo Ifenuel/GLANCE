@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { db } from "@/server/db";
+import { db, withRetry } from "@/server/db";
 import { requireRole } from "@/server/auth";
 import { requestIp, writeAudit } from "@/server/audit";
 import { issueInvitation } from "@/server/lifecycle";
@@ -294,27 +294,29 @@ export async function attachChapterLogoAction(
     };
   }
 
-  await db.$transaction([
-    db.chapter.update({
-      where: { id: chapter.id },
-      data: { logoUrl: asset.secureUrl, logoPublicId: asset.publicId },
+  await withRetry(() =>
+    db.$transaction(async (tx) => {
+      await tx.chapter.update({
+        where: { id: chapter.id },
+        data: { logoUrl: asset.secureUrl, logoPublicId: asset.publicId },
+      });
+      await tx.mediaAsset.upsert({
+        where: { publicId: asset.publicId },
+        update: { secureUrl: asset.secureUrl },
+        create: {
+          publicId: asset.publicId,
+          assetId: asset.assetId,
+          secureUrl: asset.secureUrl,
+          format: asset.format,
+          bytes: asset.bytes,
+          width: asset.width,
+          height: asset.height,
+          ownerId: user.id,
+          chapterId: chapter.id,
+        },
+      });
     }),
-    db.mediaAsset.upsert({
-      where: { publicId: asset.publicId },
-      update: { secureUrl: asset.secureUrl },
-      create: {
-        publicId: asset.publicId,
-        assetId: asset.assetId,
-        secureUrl: asset.secureUrl,
-        format: asset.format,
-        bytes: asset.bytes,
-        width: asset.width,
-        height: asset.height,
-        ownerId: user.id,
-        chapterId: chapter.id,
-      },
-    }),
-  ]);
+  );
 
   await writeAudit({
     actorId: user.id,

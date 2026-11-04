@@ -2,7 +2,7 @@
 
 import { createHash, randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
-import { db } from "@/server/db";
+import { db, withRetry } from "@/server/db";
 import type { Role } from "@prisma/client";
 import {
   createSession,
@@ -366,10 +366,12 @@ export async function resetPasswordAction(
 
   const passwordHash = await hashPassword(parsed.data.password);
 
-  await db.$transaction([
-    db.user.update({ where: { id: record.userId }, data: { passwordHash } }),
-    db.passwordReset.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
-  ]);
+  await withRetry(() =>
+    db.$transaction(async (tx) => {
+      await tx.user.update({ where: { id: record.userId }, data: { passwordHash } });
+      await tx.passwordReset.update({ where: { id: record.id }, data: { usedAt: new Date() } });
+    }),
+  );
 
   await revokeAllSessions(record.userId);
 

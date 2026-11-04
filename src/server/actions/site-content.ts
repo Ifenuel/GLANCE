@@ -2,7 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
-import { db } from "@/server/db";
+import { db, withRetry } from "@/server/db";
 import { requireRole } from "@/server/auth";
 import { requestIp, writeAudit } from "@/server/audit";
 import { parseForm, type FormState } from "@/server/validation";
@@ -197,24 +197,28 @@ export async function saveBannerSettingsAction(
   }
 
   try {
-    await db.$transaction([
-      db.siteContent.upsert({
-        where: { key: "banner.enabled" },
-        create: {
-          key: "banner.enabled",
-          value: enabled ? "1" : "0",
-          updatedBy: user.id,
-        },
-        update: { value: enabled ? "1" : "0", updatedBy: user.id },
-      }),
-      eventId
-        ? db.siteContent.upsert({
+    await withRetry(() =>
+      db.$transaction(async (tx) => {
+        await tx.siteContent.upsert({
+          where: { key: "banner.enabled" },
+          create: {
+            key: "banner.enabled",
+            value: enabled ? "1" : "0",
+            updatedBy: user.id,
+          },
+          update: { value: enabled ? "1" : "0", updatedBy: user.id },
+        });
+        if (eventId) {
+          await tx.siteContent.upsert({
             where: { key: "banner.eventId" },
             create: { key: "banner.eventId", value: eventId, updatedBy: user.id },
             update: { value: eventId, updatedBy: user.id },
-          })
-        : db.siteContent.deleteMany({ where: { key: "banner.eventId" } }),
-    ]);
+          });
+        } else {
+          await tx.siteContent.deleteMany({ where: { key: "banner.eventId" } });
+        }
+      }),
+    );
 
     await writeAudit({
       actorId: user.id,
