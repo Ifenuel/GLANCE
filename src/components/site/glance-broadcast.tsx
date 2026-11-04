@@ -851,7 +851,10 @@ function NumbersScene({ stats }: { stats: BroadcastStats }) {
     { label: "Members", value: members },
     { label: "Institutions", value: institutions },
     { label: "States reached", value: states },
-  ];
+  ]
+    // Same honesty rule as the scoreboard: leave a zero figure out of the
+    // film until chapter admins register real ones.
+    .filter((item) => item.value > 0);
 
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-navy-950 px-[6%] text-center">
@@ -867,7 +870,11 @@ function NumbersScene({ stats }: { stats: BroadcastStats }) {
           <span className="text-gold-400">each one multiplying others</span>
         </p>
       </div>
-      <div className="mt-[4%] grid w-full max-w-[680px] grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
+      <div
+        className={`mt-[4%] grid w-full max-w-[680px] grid-cols-2 gap-x-6 gap-y-2 ${
+          small.length === 4 ? "sm:grid-cols-4" : small.length === 3 ? "sm:grid-cols-3" : ""
+        }`}
+      >
         {small.map((item, i) => (
           <div
             key={item.label}

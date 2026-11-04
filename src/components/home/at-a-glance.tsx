@@ -14,6 +14,8 @@ import { platformSnapshot } from "@/server/content";
 export async function AtAGlance() {
   const snapshot = await platformSnapshot();
 
+  // Members arrive chapter admin by chapter admin; until real ones exist the
+  // scoreboard only shows figures the movement can stand behind.
   const stats = [
     {
       label: "Chapters",
@@ -39,7 +41,7 @@ export async function AtAGlance() {
       value: snapshot.states ?? 0,
       Icon: PinIcon,
     },
-  ];
+  ].filter((stat) => stat.value > 0);
 
   return (
     <section aria-label="GLANCE at a glance" className="bg-white">

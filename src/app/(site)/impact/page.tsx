@@ -48,6 +48,8 @@ export default async function ImpactPage() {
     getPageContent("impact"),
   ]);
 
+  // Same rule as the homepage scoreboard: only publish figures the movement
+  // can stand behind — a zero tile comes back the moment real data exists.
   const stats = [
     { value: `${snapshot.activeChapters}+`, label: "Chapters activated" },
     {
@@ -56,7 +58,8 @@ export default async function ImpactPage() {
     },
     { value: `${snapshot.institutions}+`, label: "Institutions represented" },
     { value: `${snapshot.states ?? 0}+`, label: "States reached" },
-  ];
+  ]
+    .filter((stat) => parseInt(stat.value.replace(/[^\d]/g, ""), 10) > 0);
 
   return (
     <div className="bg-white">
