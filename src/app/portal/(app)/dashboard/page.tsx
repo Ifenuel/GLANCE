@@ -40,35 +40,128 @@ function greetingFor(name: string) {
   return first && first.toLowerCase() !== "glance" ? `Welcome back, ${first}` : "Welcome back";
 }
 
+/* ------------------------------------------------------------------ hero */
+
+function HeroBand({
+  roleLabel,
+  name,
+  today,
+  links,
+}: {
+  roleLabel: string;
+  name: string;
+  today: string;
+  links: { href: string; label: string }[];
+}) {
+  return (
+    <header className="relative overflow-hidden rounded-2xl bg-navy-950 p-6 text-white shadow-[0_30px_60px_-30px_rgba(4,13,26,0.8)] sm:p-8">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-24 right-0 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(234,174,20,0.18),transparent_70%)] blur-2xl"
+      />
+      <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[10.5px] font-bold tracking-[0.2em] text-gold-400 uppercase">
+            {roleLabel}
+          </p>
+          <h1 className="font-display mt-2 text-[clamp(24px,4vw,34px)] leading-tight font-bold tracking-[-0.03em]">
+            {greetingFor(name)}
+          </h1>
+          <p className="font-data mt-1.5 text-[12.5px] text-white/60">{today}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[11.5px] font-bold tracking-wide text-white transition-colors hover:border-gold-400/60 hover:bg-gold-400/10 hover:text-gold-300"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/* ------------------------------------------------------------- sparkline */
+
+function Sparkline({ series }: { series: number[] }) {
+  const width = 120;
+  const height = 28;
+  const max = Math.max(...series, 1);
+  const points = series
+    .map((value, index) => {
+      const x = (index / Math.max(series.length - 1, 1)) * width;
+      const y = height - (value / max) * (height - 4) - 2;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox={`0 0 ${width} ${height}`}
+      className="mt-3 h-7 w-[120px] overflow-visible"
+      fill="none"
+    >
+      <polyline
+        points={points}
+        stroke="#eaae14"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle
+        cx={width}
+        cy={height - (series[series.length - 1] / max) * (height - 4) - 2}
+        r="3"
+        fill="#eaae14"
+      />
+    </svg>
+  );
+}
+
 function Kpi({
   label,
   value,
   hint,
   href,
+  spark,
+  pulse,
 }: {
   label: string;
   value: string;
   hint: string;
   href: string;
+  spark?: number[];
+  pulse?: boolean;
 }) {
   return (
     <Link
       href={href}
-      className="lift group rounded-2xl border border-line bg-white p-5 hover:border-navy-200"
+      className="card-lift group relative overflow-hidden rounded-2xl border border-line bg-white p-5 shadow-[0_1px_2px_rgba(5,42,92,0.06),0_18px_40px_-28px_rgba(5,42,92,0.35)] hover:border-navy-200"
     >
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-[2px] rounded-full bg-gradient-to-r from-gold-400 via-gold-400/50 to-transparent opacity-70"
+      />
       <div className="flex items-start justify-between gap-2">
         <p className="text-[10.5px] font-bold tracking-[0.14em] text-ink-400 uppercase">
           {label}
         </p>
         <span
           aria-hidden="true"
-          className="mt-1 h-1.5 w-1.5 rounded-full bg-gold-400 opacity-0 transition-opacity group-hover:opacity-100"
+          className={`mt-1 h-1.5 w-1.5 rounded-full bg-gold-400 transition-opacity ${
+            pulse ? "pulse-soft" : "opacity-0 group-hover:opacity-100"
+          }`}
         />
       </div>
       <p className="font-data mt-3 text-[32px] leading-none font-bold tracking-tight text-navy-900">
         {value}
       </p>
       <p className="mt-2 text-[11.5px] text-ink-500">{hint}</p>
+      {spark ? <Sparkline series={spark} /> : null}
     </Link>
   );
 }
@@ -85,7 +178,11 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-line bg-white">
+    <section className="relative overflow-hidden rounded-2xl border border-line bg-white shadow-[0_1px_2px_rgba(5,42,92,0.06),0_18px_40px_-28px_rgba(5,42,92,0.3)]">
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-[2px] rounded-full bg-gradient-to-r from-gold-400 via-gold-400/50 to-transparent opacity-60"
+      />
       <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
         <div>
           <h2 className="font-display text-[15px] font-bold text-navy-900">{title}</h2>
@@ -94,7 +191,7 @@ function SectionCard({
         {action ? (
           <Link
             href={action.href}
-            className="shrink-0 text-[11.5px] font-bold text-navy-900 underline decoration-gold-400 decoration-2 underline-offset-4"
+            className="shrink-0 text-[11.5px] font-bold text-navy-900 underline decoration-gold-400 decoration-2 underline-offset-4 transition-colors hover:text-gold-600"
           >
             {action.label}
           </Link>
@@ -124,22 +221,6 @@ export default async function DashboardPage() {
     month: "long",
     year: "numeric",
   }).format(new Date());
-
-  const header = (
-    <div className="rise">
-      <p className="text-[10.5px] font-bold tracking-[0.2em] text-gold-600 uppercase">
-        {access?.label ?? "GLANCE portal"}
-      </p>
-      <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="font-display text-[clamp(24px,4vw,34px)] leading-tight font-bold tracking-[-0.03em] text-navy-900">
-            {greetingFor(viewer.name)}
-          </h1>
-          <p className="font-data mt-1.5 text-[12.5px] text-ink-500">{today}</p>
-        </div>
-      </div>
-    </div>
-  );
 
   /* ------------------------------------------------------- network officer & super admin */
   if (role === "SUPER_ADMIN" || role === "AGID_ADMIN") {
@@ -180,11 +261,20 @@ export default async function DashboardPage() {
     cursor.setUTCHours(0, 0, 0, 0);
     for (let i = 11; i >= 0; i--) {
       const point = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() - i, 1));
-      const key = `${point.getUTCFullYear()}-${String(point.getUTCMonth() + 1).padStart(2, "0")}`;
+      const key = `${point.getUTCFullYear()}-${String(point.getUTCMonth() - i + 1).padStart(2, "0")}`;
+      void key;
       growthSeries.push({
         month: point.toLocaleString("en-GB", { month: "short", timeZone: "UTC" }),
-        value: monthly.get(key) ?? 0,
+        value: monthly.get(
+          `${point.getUTCFullYear()}-${String(point.getUTCMonth() + 1).padStart(2, "0")}`
+        ) ?? 0,
       });
+    }
+    const cumulativeSpark: number[] = [];
+    let running = 0;
+    for (const point of growthSeries) {
+      running += point.value;
+      cumulativeSpark.push(running);
     }
     const statusCount = (status: string) =>
       chapterStatusCounts.find((row) => row.status === status)?._count ?? 0;
@@ -193,7 +283,16 @@ export default async function DashboardPage() {
 
     return (
       <div className="space-y-6">
-        {header}
+        <HeroBand
+          roleLabel={access?.label ?? "GLANCE portal"}
+          name={viewer.name}
+          today={today}
+          links={[
+            { href: "/portal/applications", label: "Review queue" },
+            { href: "/portal/chapters", label: "Chapters" },
+            { href: "/portal/members", label: "Members" },
+          ]}
+        />
 
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           <Kpi
@@ -201,18 +300,21 @@ export default async function DashboardPage() {
             value={formatNumber(chaptersCount)}
             hint={`${footprint.totals.statesCovered} of 37 states`}
             href="/portal/chapters"
+            spark={growthSeries.map((point) => point.value)}
           />
           <Kpi
-            label="Total Members"
+            label="Total members"
             value={formatNumber(membersCount)}
             hint="Registered in the database"
             href="/portal/members"
- />
+            spark={cumulativeSpark}
+          />
           <Kpi
             label="Pending applications"
             value={formatNumber(pending)}
             hint={`${memberApps} member, ${chapterApps} chapter`}
             href="/portal/applications"
+            pulse={pending > 0}
           />
           <Kpi
             label="Institutions"
@@ -224,10 +326,10 @@ export default async function DashboardPage() {
 
         {/* Charts matching board layout */}
         <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-          <div className="rounded-2xl border border-line bg-white p-5 shadow-sm">
+          <div className="relative overflow-hidden rounded-2xl border border-line bg-white p-5 shadow-[0_1px_2px_rgba(5,42,92,0.06),0_18px_40px_-28px_rgba(5,42,92,0.3)]">
             <GrowthLineChart series={growthSeries} />
           </div>
-          <div className="rounded-2xl border border-line bg-white p-5 shadow-sm">
+          <div className="relative overflow-hidden rounded-2xl border border-line bg-white p-5 shadow-[0_1px_2px_rgba(5,42,92,0.06),0_18px_40px_-28px_rgba(5,42,92,0.3)]">
             <ChapterStatusDonut
               active={statusCount("ACTIVE")}
               pending={statusCount("PENDING")}
@@ -236,7 +338,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="rise" style={{ "--d": "120ms" } as React.CSSProperties}>
+        <div className="card-lift">
           <NigeriaInteractiveMap data={footprint} />
         </div>
 
@@ -257,7 +359,7 @@ export default async function DashboardPage() {
                       People waiting to join a chapter
                     </p>
                   </div>
-                  <span className="font-data shrink-0 rounded-lg bg-navy-900 px-3.5 py-2 text-[12px] font-bold text-white">
+                  <span className="pulse-soft font-data shrink-0 rounded-lg bg-navy-900 px-3.5 py-2 text-[12px] font-bold text-white">
                     {memberApps} open
                   </span>
                 </li>
@@ -268,7 +370,7 @@ export default async function DashboardPage() {
                       New campuses asking to open a chapter
                     </p>
                   </div>
-                  <span className="font-data shrink-0 rounded-lg border border-line px-3.5 py-2 text-[12px] font-bold text-navy-800">
+                  <span className="pulse-soft font-data shrink-0 rounded-lg border border-line px-3.5 py-2 text-[12px] font-bold text-navy-800">
                     {chapterApps} open
                   </span>
                 </li>
@@ -321,7 +423,16 @@ export default async function DashboardPage() {
 
     return (
       <div className="space-y-6">
-        {header}
+        <HeroBand
+          roleLabel={access?.label ?? "GLANCE portal"}
+          name={viewer.name}
+          today={today}
+          links={[
+            { href: "/portal/events", label: "Manage events" },
+            { href: "/portal/media", label: "Gallery" },
+            { href: "/news", label: "Public feed" },
+          ]}
+        />
 
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           <Kpi
@@ -335,6 +446,7 @@ export default async function DashboardPage() {
             value={formatNumber(upcoming)}
             hint="On the public calendar"
             href="/portal/events"
+            pulse={upcoming > 0}
           />
           <Kpi
             label="Gallery items"
@@ -418,8 +530,13 @@ export default async function DashboardPage() {
     if (!viewer.chapterId) {
       return (
         <div className="space-y-6">
-          {header}
-          <div className="rounded-2xl border border-gold-200 bg-gold-100/40 p-6">
+          <HeroBand
+            roleLabel={access?.label ?? "GLANCE portal"}
+            name={viewer.name}
+            today={today}
+            links={[{ href: "/portal/profile", label: "My profile" }]}
+          />
+          <div className="rounded-2xl border border-gold-200 bg-gold-100/40 p-6 shadow-[0_18px_40px_-28px_rgba(5,42,92,0.35)]">
             <h2 className="font-display text-[18px] font-bold text-navy-900">
               No chapter attached to this account yet
             </h2>
@@ -466,11 +583,26 @@ export default async function DashboardPage() {
 
     return (
       <div className="space-y-6">
-        {header}
+        <HeroBand
+          roleLabel={access?.label ?? "GLANCE portal"}
+          name={viewer.name}
+          today={today}
+          links={[
+            { href: "/portal/reports/new", label: "Submit report" },
+            { href: "/portal/members/register", label: "Register member" },
+            { href: "/portal/chapter", label: "Chapter" },
+          ]}
+        />
 
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           <Kpi label="Active members" value={formatNumber(activeMembers)} hint="On your roster" href="/portal/members" />
-          <Kpi label="Reports filed" value={formatNumber(reports)} hint="Activity on record" href="/portal/reports" />
+          <Kpi
+            label="Reports filed"
+            value={formatNumber(reports)}
+            hint="Activity on record"
+            href="/portal/reports"
+            pulse={pendingInvites > 0}
+          />
           <Kpi label="Pending invites" value={formatNumber(pendingInvites)} hint="Awaiting activation" href="/portal/invitations" />
           <Kpi label="Chapter events" value={formatNumber(chapter?._count.events ?? 0)} hint="Held on your campus" href="/portal/chapter" />
         </div>

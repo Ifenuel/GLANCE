@@ -1272,3 +1272,13 @@ html.intro-waiting .site-stage {
     transform: translateY(-2px);
   }
 }
+
+/* ── Pulse: a one-time soft gold pulse for live dashboard counts ─────── */
+@keyframes pulse-soft {
+  0% { box-shadow: 0 0 0 0 rgba(234, 174, 20, 0.45); }
+  70% { box-shadow: 0 0 0 8px rgba(234, 174, 20, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(234, 174, 20, 0); }
+}
+.pulse-soft {
+  animation: pulse-soft 2.4s ease-in-out infinite;
+}
