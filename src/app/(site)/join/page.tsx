@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-
-export const instant = false;
 import pathInfluence from "@/assets/pathway-influence.jpg";
 import { JoinForm } from "@/components/forms/join-form";
 import { PageHeader } from "@/components/site/page-header";

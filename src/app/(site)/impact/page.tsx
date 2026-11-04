@@ -8,7 +8,7 @@ import { Container } from "@/components/ui";
 import { platformSnapshot } from "@/server/content";
 
 export const metadata: Metadata = {
-  title: "Our Impact | GLANCE",
+  title: "Our Impact",
   description:
     "Real people, real change. How GLANCE is equipping the next generation of Nigerian leaders.",
 };

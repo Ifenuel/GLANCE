@@ -11,7 +11,7 @@ import { formatDate } from "@/lib/format";
 import { getSiteSections, listPublishedPostsPaged } from "@/server/content";
 
 export const metadata: Metadata = {
-  title: "News & Updates | GLANCE",
+  title: "News & Updates",
   description: "Stay informed with our latest stories, events, and updates across all chapters.",
 };
 

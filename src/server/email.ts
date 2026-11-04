@@ -1,5 +1,7 @@
 import "server-only";
 
+import { SITE_URL } from "@/lib/site";
+
 /**
  * Transactional email — Brevo (https://api.brevo.com/v3/smtp/email).
  *
@@ -36,27 +38,9 @@ const GOLD = "#EAAE14";
 const INK = "#46566D";
 const LINE = "#e3e9f1";
 
-/**
- * Where email links and the logo live in production. The custom domain is not
- * serving yet, so this points at the live deployment; switch it to
- * https://glance.org.ng once that domain resolves.
- */
-const PRODUCTION_ORIGIN = "https://glance-mu-nine.vercel.app";
-
 /** Public site origin, used for logo, links and the footer. */
 function appOrigin() {
-  const raw = process.env.NEXT_PUBLIC_APP_ORIGIN?.trim() || process.env.APP_ORIGIN?.trim() || "";
-  const cleaned = raw.replace(/\/+$/, "");
-  if (!/^https?:\/\//.test(cleaned)) return PRODUCTION_ORIGIN;
-  // A deployed build must never email localhost links to real people.
-  if (
-    process.env.NODE_ENV === "production" &&
-    /^https?:\/\/(localhost|127\.0\.0\.1)/.test(cleaned) &&
-    !process.env.LOCAL_EMAIL_LINKS
-  ) {
-    return PRODUCTION_ORIGIN;
-  }
-  return cleaned;
+  return SITE_URL;
 }
 
 const FONT = "Arial, 'Helvetica Neue', Helvetica, sans-serif";

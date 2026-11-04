@@ -3,8 +3,7 @@ import {
   listPublicChapters,
   listPublishedPosts,
 } from "@/server/content";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
+import { SITE_URL } from "@/lib/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPaths = [

@@ -42,7 +42,12 @@ const nextConfig: NextConfig = {
     ? [process.env.NEXT_DEV_ALLOWED_ORIGIN]
     : undefined,
   cacheComponents: true,
-  partialPrefetching: true,
+  // Must stay `false` for now: with it enabled, routes that read URL data
+  // (/news/[slug], /chapters/[code], /join?chapter=…) render only their
+  // shell — the streamed body is left in a hidden `<div id="S:…">` and the
+  // page shows just header/footer. Re-test when upgrading Next.js; both
+  // flags become defaults and the option is removed in the next major.
+  partialPrefetching: false,
   images: {
     remotePatterns: [
       {

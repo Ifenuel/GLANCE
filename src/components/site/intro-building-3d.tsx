@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   ContactShadows,
@@ -43,9 +43,10 @@ function makeFacadeTexture(
   rows: number,
   seed: number,
   litShare: number,
+  cellSize = 40,
 ) {
-  const cell = 40;
-  const gap = 7;
+  const cell = cellSize;
+  const gap = Math.max(3, Math.round(cell * 0.18));
   const canvas = document.createElement("canvas");
   canvas.width = cols * cell;
   canvas.height = rows * cell;
@@ -82,10 +83,11 @@ function makeFacadeTexture(
 }
 
 /** Rooftop sign texture — "GLANCE" set in the brand gold on deep navy. */
-function makeSignTexture() {
+function makeSignTexture(small = false) {
   const canvas = document.createElement("canvas");
-  canvas.width = 1024;
-  canvas.height = 288;
+  canvas.width = small ? 512 : 1024;
+  canvas.height = small ? 144 : 288;
+  const scale = canvas.width / 1024;
   const ctx = canvas.getContext("2d")!;
 
   ctx.fillStyle = "#04122a";
@@ -93,20 +95,20 @@ function makeSignTexture() {
 
   // Gold frame.
   ctx.strokeStyle = "#EAAE14";
-  ctx.lineWidth = 10;
-  ctx.strokeRect(18, 18, canvas.width - 36, canvas.height - 36);
+  ctx.lineWidth = 10 * scale;
+  ctx.strokeRect(18 * scale, 18 * scale, canvas.width - 36 * scale, canvas.height - 36 * scale);
 
   // Wordmark.
   ctx.fillStyle = "#F5C15C";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.font = "900 120px Georgia, 'Times New Roman', serif";
-  ctx.fillText("G L A N C E", canvas.width / 2, canvas.height / 2 - 14);
+  ctx.font = `900 ${Math.round(120 * scale)}px Georgia, 'Times New Roman', serif`;
+  ctx.fillText("G L A N C E", canvas.width / 2, canvas.height / 2 - 14 * scale);
 
   // Subline.
   ctx.fillStyle = "rgba(245,193,92,0.62)";
-  ctx.font = "700 34px Arial, sans-serif";
-  ctx.fillText("HOUSE OF THE MOVEMENT", canvas.width / 2, canvas.height / 2 + 86);
+  ctx.font = `700 ${Math.round(34 * scale)}px Arial, sans-serif`;
+  ctx.fillText("HOUSE OF THE MOVEMENT", canvas.width / 2, canvas.height / 2 + 86 * scale);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -115,20 +117,21 @@ function makeSignTexture() {
 }
 
 /** Gold campus plaque — one chapter of the GLANCE story per building. */
-function makePlaqueTexture(title: string, subline: string) {
+function makePlaqueTexture(title: string, subline: string, small = false) {
   const canvas = document.createElement("canvas");
-  canvas.width = 640;
-  canvas.height = 400;
+  canvas.width = small ? 384 : 640;
+  canvas.height = small ? 240 : 400;
+  const scale = canvas.width / 640;
   const ctx = canvas.getContext("2d")!;
 
   ctx.fillStyle = "#04122a";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.strokeStyle = "#EAAE14";
-  ctx.lineWidth = 10;
-  ctx.strokeRect(14, 14, canvas.width - 28, canvas.height - 28);
-  ctx.lineWidth = 3;
-  ctx.strokeRect(38, 38, canvas.width - 76, canvas.height - 76);
+  ctx.lineWidth = 10 * scale;
+  ctx.strokeRect(14 * scale, 14 * scale, canvas.width - 28 * scale, canvas.height - 28 * scale);
+  ctx.lineWidth = 3 * scale;
+  ctx.strokeRect(38 * scale, 38 * scale, canvas.width - 76 * scale, canvas.height - 76 * scale);
 
   // Wrap the title onto at most two discipline-friendly lines.
   const words = title.split(" ");
@@ -148,22 +151,22 @@ function makePlaqueTexture(title: string, subline: string) {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#F5C15C";
-  ctx.font = "900 56px Georgia, 'Times New Roman', serif";
-  const titleTop = lines.length > 1 ? 138 : 168;
+  ctx.font = `900 ${Math.round(56 * scale)}px Georgia, 'Times New Roman', serif`;
+  const titleTop = (lines.length > 1 ? 138 : 168) * scale;
   lines.forEach((text, i) => {
-    ctx.fillText(text, canvas.width / 2, titleTop + i * 62);
+    ctx.fillText(text, canvas.width / 2, titleTop + i * 62 * scale);
   });
 
   ctx.fillStyle = "rgba(245,193,92,0.8)";
-  ctx.font = "700 28px Arial, sans-serif";
+  ctx.font = `700 ${Math.round(28 * scale)}px Arial, sans-serif`;
   ctx.fillText(
     subline.toUpperCase(),
     canvas.width / 2,
-    (lines.length > 1 ? titleTop + lines.length * 62 : titleTop + 52) + 24,
+    (lines.length > 1 ? titleTop + lines.length * 62 * scale : titleTop + 52 * scale) + 24 * scale,
   );
 
   ctx.fillStyle = "#EAAE14";
-  ctx.fillRect(canvas.width / 2 - 52, 330, 104, 5);
+  ctx.fillRect(canvas.width / 2 - 52 * scale, 330 * scale, 104 * scale, 5 * scale);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -176,7 +179,7 @@ const STONE_LIGHT = "#173a68";
 const GOLD_TRIM = { color: "#c98f10", emissive: "#EAAE14", emissiveIntensity: 0.28, metalness: 0.85, roughness: 0.35 } as const;
 
 /** One of the six campus buildings — varied silhouettes around the plaza. */
-function MiniBuilding({ kind }: { kind: (typeof STATIONS)[number]["kind"] }) {
+function MiniBuilding({ kind, low }: { kind: (typeof STATIONS)[number]["kind"]; low: boolean }) {
   return (
     <group position={[0, 0, -2.1]}>
       {kind === "rotunda" && (
@@ -210,7 +213,7 @@ function MiniBuilding({ kind }: { kind: (typeof STATIONS)[number]["kind"] }) {
             <meshStandardMaterial color={STONE_LIGHT} metalness={0.35} roughness={0.65} />
           </mesh>
           <mesh position={[0, 1.32, 0]} castShadow>
-            <sphereGeometry args={[0.72, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <sphereGeometry args={[0.72, low ? 12 : 20, low ? 8 : 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
             <meshStandardMaterial {...GOLD_TRIM} />
           </mesh>
         </group>
@@ -280,16 +283,18 @@ function StationBuilding({
   index,
   x,
   z,
+  low,
 }: {
   angle: number;
   index: number;
   x: number;
   z: number;
+  low: boolean;
 }) {
   const station = STATIONS[index];
   const plaque = useMemo(
-    () => makePlaqueTexture(station.title, station.subline),
-    [station.title, station.subline],
+    () => makePlaqueTexture(station.title, station.subline, low),
+    [station.title, station.subline, low],
   );
 
   return (
@@ -321,22 +326,23 @@ function StationBuilding({
         />
       </mesh>
 
-      <MiniBuilding kind={station.kind} />
+      <MiniBuilding kind={station.kind} low={low} />
     </group>
   );
 }
 
 /** A campus ring: six story stops facing outward, lamps and trees between. */
-function CampusRing() {
+function CampusRing({ low }: { low: boolean }) {
   const stations = useMemo(() => STATIONS, []);
   const trees = useMemo(() => {
     const rand = mulberry32(91);
-    return Array.from({ length: 10 }, (_, i) => ({
-      angle: (i / 10) * Math.PI * 2 + 0.28 + rand() * 0.14,
+    const count = low ? 6 : 10;
+    return Array.from({ length: count }, (_, i) => ({
+      angle: (i / count) * Math.PI * 2 + 0.28 + rand() * 0.14,
       radius: 6.5 + rand() * 0.9,
       green: rand() > 0.5,
     }));
-  }, []);
+  }, [low]);
 
   return (
     <group>
@@ -344,7 +350,9 @@ function CampusRing() {
         const angle = (i / stations.length) * Math.PI * 2;
         const x = Math.sin(angle) * 8.9;
         const z = Math.cos(angle) * 8.9;
-        return <StationBuilding key={station.title} angle={angle} index={i} x={x} z={z} />;
+        return (
+          <StationBuilding key={station.title} angle={angle} index={i} x={x} z={z} low={low} />
+        );
       })}
 
       {/* Warm campus lamps in the gaps between stations. */}
@@ -374,7 +382,7 @@ function CampusRing() {
             <meshStandardMaterial color="#3a2a18" roughness={0.9} />
           </mesh>
           <mesh position={[0, 0.85, 0]} castShadow>
-            <sphereGeometry args={[0.5, 10, 10]} />
+            <sphereGeometry args={[0.5, low ? 7 : 10, low ? 7 : 10]} />
             <meshStandardMaterial color={tree.green ? "#1c4f38" : "#17412e"} roughness={0.85} />
           </mesh>
           <mesh position={[0, 1.28, 0]} castShadow>
@@ -401,16 +409,18 @@ const STATIONS = [
 function HeadquarterTower({
   position,
   size,
+  low,
 }: {
   position: [number, number, number];
   size: [number, number, number];
+  low: boolean;
 }) {
   const [width, height, depth] = size;
   const facade = useMemo(
-    () => makeFacadeTexture(8, 17, 7, 0.42),
-    [],
+    () => makeFacadeTexture(low ? 5 : 8, low ? 11 : 17, 7, 0.42, low ? 24 : 40),
+    [low],
   );
-  const sign = useMemo(() => makeSignTexture(), []);
+  const sign = useMemo(() => makeSignTexture(low), [low]);
   const beaconRef = useRef<THREE.Mesh>(null);
 
   useFrame(({ clock }) => {
@@ -463,7 +473,7 @@ function HeadquarterTower({
         <meshStandardMaterial color="#1b3a68" metalness={0.7} roughness={0.4} />
       </mesh>
       <mesh ref={beaconRef} position={[position[0] + 0.9, roofY + 2.14, position[2] + 0.7]}>
-        <sphereGeometry args={[0.075, 16, 16]} />
+        <sphereGeometry args={[0.075, low ? 8 : 16, low ? 8 : 16]} />
         <meshStandardMaterial
           color="#FB4A3C"
           emissive="#FFC24D"
@@ -498,11 +508,16 @@ function HeadquarterTower({
 function AnnexTower({
   position,
   size,
+  low,
 }: {
   position: [number, number, number];
   size: [number, number, number];
+  low: boolean;
 }) {
-  const facade = useMemo(() => makeFacadeTexture(6, 11, 23, 0.34), []);
+  const facade = useMemo(
+    () => makeFacadeTexture(low ? 4 : 6, low ? 7 : 11, 23, 0.34, low ? 24 : 40),
+    [low],
+  );
   const [width, height, depth] = size;
   return (
     <mesh position={position} castShadow>
@@ -520,14 +535,14 @@ function AnnexTower({
 }
 
 /** Stone podium with a gold entrance canopy and a warm doorway glow. */
-function Podium({ size }: { size: [number, number, number] }) {
+function Podium({ size, low }: { size: [number, number, number]; low: boolean }) {
   const [width, height, depth] = size;
   return (
     <group>
       <RoundedBox
         args={[width, height, depth]}
         radius={0.1}
-        smoothness={3}
+        smoothness={low ? 2 : 3}
         position={[0, height / 2, 0]}
         castShadow
       >
@@ -570,15 +585,15 @@ function Podium({ size }: { size: [number, number, number] }) {
 }
 
 /** Ground disc + the standing light pool the film already sells. */
-function Ground() {
+function Ground({ low }: { low: boolean }) {
   return (
     <group>
       <mesh position={[0, -0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[34, 64]} />
+        <circleGeometry args={[34, low ? 32 : 64]} />
         <meshStandardMaterial color="#030d1e" metalness={0.55} roughness={0.55} />
       </mesh>
       <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[7.5, 48]} />
+        <circleGeometry args={[7.5, low ? 24 : 48]} />
         <meshBasicMaterial color="#EAAE14" transparent opacity={0.05} />
       </mesh>
     </group>
@@ -599,34 +614,68 @@ function CameraRig() {
   return null;
 }
 
-function BuildingScene() {
+function BuildingScene({ low }: { low: boolean }) {
   return (
     <group>
-      <Ground />
-      <Podium size={[7.4, 1.5, 6.2]} />
+      <Ground low={low} />
+      <Podium size={[7.4, 1.5, 6.2]} low={low} />
       {/* The GLANCE headquarters at the centre of its own campus. */}
-      <HeadquarterTower position={[0.6, 4.9, -0.4]} size={[3.3, 6.8, 3.3]} />
-      <AnnexTower position={[-2.5, 3.8, 0.9]} size={[2.2, 4.6, 2.2]} />
+      <HeadquarterTower position={[0.6, 4.9, -0.4]} size={[3.3, 6.8, 3.3]} low={low} />
+      <AnnexTower position={[-2.5, 3.8, 0.9]} size={[2.2, 4.6, 2.2]} low={low} />
       {/* Six campus stops tell the GLANCE story on one walk round. */}
-      <CampusRing />
-      <ContactShadows
-        position={[0, 0.012, 0]}
-        scale={30}
-        blur={2.6}
-        far={9}
-        opacity={0.5}
-        color="#01060f"
-      />
+      <CampusRing low={low} />
+      {/* Contact shadows re-render the whole scene every frame — too costly on
+          a phone GPU. A soft painted pool gives the same grounding for free. */}
+      {low ? (
+        <mesh position={[0, 0.014, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[7.2, 24]} />
+          <meshBasicMaterial color="#01060f" transparent opacity={0.45} />
+        </mesh>
+      ) : (
+        <ContactShadows
+          position={[0, 0.012, 0]}
+          scale={30}
+          blur={2.6}
+          far={9}
+          opacity={0.5}
+          color="#01060f"
+        />
+      )}
     </group>
   );
 }
 
+/**
+ * Phones get a deliberately lighter renderer: half the pixel ratio, no MSAA,
+ * no contact shadows, smaller generated textures and cheaper geometry. The
+ * scene looks the same; it just stops asking a mobile GPU for desktop work.
+ */
+function prefersLighterScene() {
+  if (typeof window === "undefined") return false;
+  const coarse = window.matchMedia?.("(pointer: coarse)").matches ?? false;
+  const narrow = window.matchMedia?.("(max-width: 820px)").matches ?? false;
+  const cores = navigator.hardwareConcurrency ?? 8;
+  const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
+  return narrow || (coarse && (cores <= 6 || memory <= 4));
+}
+
 export function IntroBuildingScene() {
+  const [low, setLow] = useState(false);
+
+  useEffect(() => {
+    setLow(prefersLighterScene());
+  }, []);
+
   return (
     <Canvas
       camera={{ position: [0, 5.6, 22], fov: 34 }}
-      dpr={[1, 1.75]}
-      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      dpr={low ? 1 : [1, 1.75]}
+      gl={{
+        antialias: !low,
+        alpha: true,
+        powerPreference: low ? "default" : "high-performance",
+        precision: low ? "mediump" : "highp",
+      }}
       style={{ position: "absolute", inset: 0 }}
     >
            <fog attach="fog" args={["#030d1e", 34, 82]} />
@@ -649,11 +698,11 @@ export function IntroBuildingScene() {
       />
 
       <CameraRig />
-      <BuildingScene />
+      <BuildingScene low={low} />
 
       {/* Procedural environment: glass picks up warm streets and cool sky
           without downloading any HDRI. */}
-      <Environment resolution={256}>
+      <Environment resolution={low ? 64 : 256}>
         <Lightformer
           intensity={2.2}
           color="#ffd9a0"
@@ -666,12 +715,14 @@ export function IntroBuildingScene() {
           position={[0, 4, -7]}
           scale={[10, 4, 1]}
         />
-        <Lightformer
-          intensity={1.1}
-          color="#EAAE14"
-          position={[6, 1.5, 2]}
-          scale={[3, 1.4, 1]}
-        />
+        {low ? null : (
+          <Lightformer
+            intensity={1.1}
+            color="#EAAE14"
+            position={[6, 1.5, 2]}
+            scale={[3, 1.4, 1]}
+          />
+        )}
       </Environment>
 
       {/* The visitor walks round the building; it keeps turning on its own. */}

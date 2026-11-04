@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getCurrentUser } from "@/server/auth";
 import { auditEntry, auditActionLabel } from "@/server/audit";
 import { Card } from "@/components/ui";
@@ -105,6 +106,14 @@ export default async function ProfilePage() {
             <div className="mt-5">
               <AvatarUploader currentUrl={avatarUrl} name={user.name} />
             </div>
+            {user.profile ? (
+              <Link
+                href="/portal/card"
+                className="mt-5 inline-flex h-10 w-full items-center justify-center rounded-lg border border-line bg-white text-[12.5px] font-bold text-navy-800 transition-colors hover:bg-navy-50"
+              >
+                View my membership card
+              </Link>
+            ) : null}
           </Card>
 
           <Card>

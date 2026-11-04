@@ -29,6 +29,12 @@ const items: PortalItem[] = [
     group: "Overview",
   },
   {
+    label: "My card",
+    href: "/portal/card",
+    roles: ["MEMBER", "ALUMNI"],
+    group: "Overview",
+  },
+  {
     label: "Statistics",
     href: "/portal/statistics",
     roles: ["SUPER_ADMIN", "AGID_ADMIN"],
@@ -153,6 +159,14 @@ function NavIcon({ label, className }: { label: string; className?: string }) {
         <svg {...common}>
           <circle cx="12" cy="8" r="3.6" />
           <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+        </svg>
+      );
+    case "My card":
+      return (
+        <svg {...common}>
+          <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
+          <circle cx="8.5" cy="11" r="2" />
+          <path d="M5.5 16.2c.6-1.4 1.7-2.1 3-2.1s2.4.7 3 2.1M14 10h4M14 13.5h4" />
         </svg>
       );
     case "Statistics":

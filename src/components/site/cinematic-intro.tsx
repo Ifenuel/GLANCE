@@ -257,11 +257,11 @@ export function CinematicIntro() {
           {/* Standing light pooling under the building */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-[16%] left-1/2 h-[46vh] w-[120vw] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(234,174,20,0.16)_0%,transparent_60%)] blur-2xl"
+            className="pointer-events-none absolute bottom-[16%] left-1/2 h-[46vh] w-[120vw] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(234,174,20,0.16)_0%,transparent_60%)] blur-lg sm:blur-2xl"
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -top-40 left-1/2 h-[420px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(234,174,20,0.08)_0%,transparent_70%)] blur-3xl"
+            className="pointer-events-none absolute -top-40 left-1/2 h-[420px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(234,174,20,0.08)_0%,transparent_70%)] blur-xl sm:blur-3xl"
           />
           {/* Far skyline for the building to belong to */}
           <svg
