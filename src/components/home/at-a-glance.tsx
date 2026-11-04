@@ -79,7 +79,7 @@ export async function AtAGlance() {
                         <p className="text-[15px] font-extrabold text-white">
                           {stat.label}
                         </p>
-                        <p className="mt-0.5 text-[12.5px] text-white/55">
+                        <p className="mt-0.5 text-[12.5px] text-white/70">
                           {stat.caption}
                         </p>
                       </dt>

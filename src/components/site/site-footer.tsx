@@ -64,7 +64,7 @@ export function SiteFooter() {
           <div className="grid flex-1 grid-cols-2 gap-10 sm:grid-cols-3">
             {footerColumns.map((column) => (
               <nav key={column.heading} aria-label={column.heading}>
-                <h3 className="text-[11px] font-bold tracking-[0.18em] text-white/55 uppercase">
+                <h3 className="text-[11px] font-bold tracking-[0.18em] text-white/70 uppercase">
                   {column.heading}
                 </h3>
                 <ul className="mt-4 space-y-2.5 text-[13.5px] text-white/80">
@@ -86,7 +86,7 @@ export function SiteFooter() {
 
         {/* Legal bar */}
         <div className="border-t border-white/10">
-          <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-3 px-5 py-5 text-[12.5px] text-white/55 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+          <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-3 px-5 py-5 text-[12.5px] text-white/70 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <Link href="/privacy" className="transition-colors hover:text-white">
                 Privacy Policy

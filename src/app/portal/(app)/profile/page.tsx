@@ -76,7 +76,7 @@ export default async function ProfilePage() {
           </div>
           <dl className="flex gap-6 text-right">
             <div>
-              <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">
+              <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/65">
                 Role
               </dt>
               <dd className="mt-0.5 font-data text-[15px] font-bold text-white">
@@ -84,7 +84,7 @@ export default async function ProfilePage() {
               </dd>
             </div>
             <div>
-              <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">
+              <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/65">
                 {user.profile ? "Member ID" : "GLANCE ID"}
               </dt>
               <dd className="mt-0.5 font-mono text-[15px] font-bold text-gold-300">

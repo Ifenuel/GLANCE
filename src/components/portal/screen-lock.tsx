@@ -190,7 +190,7 @@ export function ScreenLock({ name }: { name: string }) {
               <h1 className="font-display mt-7 text-center text-[26px] font-bold tracking-[-0.02em] text-white">
                 Screen locked
               </h1>
-              <p className="mt-2 text-center text-[13px] leading-relaxed text-white/45">
+              <p className="mt-2 text-center text-[13px] leading-relaxed text-white/65">
                 {name.split(" ")[0] || "Welcome back"}, enter your password to
                 get straight back to where you were.
               </p>

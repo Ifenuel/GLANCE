@@ -65,8 +65,16 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         <Suspense fallback={null}>
           <EventBannerSlot />
         </Suspense>
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-full focus:bg-navy-950 focus:px-5 focus:py-2.5 focus:text-[13px] focus:font-bold focus:text-white focus:ring-2 focus:ring-gold-400"
+        >
+          Skip to content
+        </a>
         <SiteHeader />
-        <main className="flex-1">{children}</main>
+        <main id="main" className="flex-1">
+          {children}
+        </main>
         <SiteFooter />
         <BackToTop />
       </div>

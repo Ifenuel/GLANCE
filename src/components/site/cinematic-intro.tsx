@@ -313,7 +313,7 @@ export function CinematicIntro() {
         <div className="absolute inset-x-0 bottom-[2.5vh] flex flex-col items-center gap-2.5">
           <p
             data-hint
-            className="text-[10.5px] font-bold tracking-[0.28em] text-white/45 uppercase"
+            className="text-[10.5px] font-bold tracking-[0.28em] text-white/65 uppercase"
             style={{ opacity: 0 }}
           >
             Drag the building · turn it full circle

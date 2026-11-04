@@ -43,7 +43,7 @@ export function AnalyticsConsentToggle() {
     return (
       <span
         aria-label={`Analytics consent: ask on first visit`}
-        className="inline-flex items-center whitespace-nowrap text-white/55"
+        className="inline-flex items-center whitespace-nowrap text-white/70"
       >
         {label}
       </span>

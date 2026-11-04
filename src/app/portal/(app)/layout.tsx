@@ -105,7 +105,7 @@ export default async function PortalAppLayout({
           <Link href="/portal/dashboard" className="inline-flex" aria-label="GLANCE portal dashboard">
             <GlanceLogo variant="light" className="h-9" />
           </Link>
-          <p className="mt-2 text-[10.5px] font-semibold tracking-[0.16em] text-white/45 uppercase">
+          <p className="mt-2 text-[10.5px] font-semibold tracking-[0.16em] text-white/65 uppercase">
             Member area
           </p>
         </div>
@@ -139,12 +139,12 @@ export default async function PortalAppLayout({
             />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[12.5px] font-bold text-white">{user.name}</p>
-              <p className="truncate text-[11px] text-white/45">{user.email}</p>
+              <p className="truncate text-[11px] text-white/65">{user.email}</p>
             </div>
             <form action={logoutAction}>
               <button
                 type="submit"
-                className="rounded-lg px-2 py-1.5 text-[11px] font-bold text-white/55 transition-colors hover:bg-white/10 hover:text-white"
+                className="rounded-lg px-2 py-1.5 text-[11px] font-bold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
               >
                 Out
               </button>

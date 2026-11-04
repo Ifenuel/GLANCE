@@ -31,29 +31,31 @@ export function PremiumMotion() {
     gsap.registerPlugin(ScrollTrigger);
 
     const lenis = new Lenis({
-      duration: 1.15,
-      // Slightly weighted wheel feel without being floaty.
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      // A shorter, more direct glide: long durations feel laggy on Windows
+      // trackpads, which is what "smooth scroll is broken" usually means.
+      duration: 0.85,
+      easing: (t: number) => 1 - Math.pow(1 - t, 3),
       smoothWheel: true,
+      // Native touch scrolling stays in charge on phones and tablets — it is
+      // already smooth, and touch smoothing is the usual source of jank.
+      syncTouch: false,
+      wheelMultiplier: 1,
+      touchMultiplier: 1.4,
     });
     lenisRef.current = lenis;
 
-    let ticking = false;
-    const onScroll = (time: number) => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(() => {
-          ScrollTrigger.update();
-          ticking = false;
-        });
-      }
-      lenis.raf(time * 1000);
-    };
-    gsap.ticker.add(onScroll);
+    // One update per frame, and only when Lenis actually moved — anything
+    // more floods ScrollTrigger and makes the whole page feel heavy.
+    const onLenisScroll = () => ScrollTrigger.update();
+    lenis.on("scroll", onLenisScroll);
+
+    const onTick = (time: number) => lenis.raf(time * 1000);
+    gsap.ticker.add(onTick);
     gsap.ticker.lagSmoothing(0);
 
     return () => {
-      gsap.ticker.remove(onScroll);
+      lenis.off("scroll", onLenisScroll);
+      gsap.ticker.remove(onTick);
       lenis.destroy();
       lenisRef.current = null;
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());

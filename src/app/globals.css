@@ -41,7 +41,10 @@
 
 @layer base {
   html {
-    scroll-behavior: smooth;
+    /* Native smooth scrolling fights Lenis: the browser tries to ease the
+       same wheel events the engine already eases, which reads as sluggish,
+       rubber-banded scrolling. Anchors still get smooth travel via Lenis. */
+    scroll-behavior: auto;
     scroll-padding-top: 5.5rem;
     -webkit-text-size-adjust: 100%;
   }
@@ -1281,4 +1284,22 @@ html.intro-waiting .site-stage {
 }
 .pulse-soft {
   animation: pulse-soft 2.4s ease-in-out infinite;
+}
+
+/* ── Lenis: the styles the engine requires, plus a native anchor fallback ── */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
 }

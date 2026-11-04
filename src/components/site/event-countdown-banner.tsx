@@ -175,7 +175,7 @@ export function EventCountdownBanner({ event }: { event: UpcomingEventBanner }) 
           ).map(([value, unit]) => (
             <span key={unit} className="rounded border border-white/10 bg-white/[0.06] px-1.5 py-0.5 tabular-nums">
               {String(value).padStart(2, "0")}
-              <span className="ml-0.5 text-[8px] font-bold text-white/45">{unit}</span>
+              <span className="ml-0.5 text-[8px] font-bold text-white/65">{unit}</span>
             </span>
           ))}
         </div>

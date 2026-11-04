@@ -69,7 +69,7 @@ export default function LoginPage() {
 
       {/* Footer — calm, non-technical help */}
       <div className="mt-6 flex flex-col items-center gap-2 text-[12px]">
-        <p className="text-center leading-[1.8] text-white/45">
+        <p className="text-center leading-[1.8] text-white/65">
           Issues signing in? Contact your GLANCE coordinator or the
           secretariat for help.
         </p>
