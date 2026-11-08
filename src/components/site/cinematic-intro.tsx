@@ -10,34 +10,11 @@ const IntroBuildingScene = lazy(
     import("./intro-building-3d").then((m) => ({ default: m.IntroBuildingScene })),
 );
 
-export const INTRO_STORAGE_KEY = "glance:intro-seen";
-
-/** "Already welcomed this visit" — sessionStorage, so the film greets a
- * visitor exactly once per tab session: the first time the site is loaded.
- * Reloads, link clicks back to the homepage and tab switches never replay
- * it, because the marker outlives all of those inside the tab. Closing the
- * tab clears the marker, so a fresh session is met by the film again. */
+/** "Already welcomed this document load" — a plain module flag: it resets
+ * every time the page itself loads, so the film greets the visitor on EVERY
+ * fresh visit to the homepage, while moving around inside the same session
+ * (home → events → back home) never replays it mid-session. */
 let welcomedThisVisit = false;
-
-function alreadyWelcomed() {
-  if (welcomedThisVisit) return true;
-  try {
-    return sessionStorage.getItem(INTRO_STORAGE_KEY) === "1";
-  } catch {
-    // Storage can throw in private modes with data disabled; fall back to
-    // the in-memory marker alone.
-    return false;
-  }
-}
-
-function markWelcomed() {
-  welcomedThisVisit = true;
-  try {
-    sessionStorage.setItem(INTRO_STORAGE_KEY, "1");
-  } catch {
-    // Same as above — the in-memory still covers this page load.
-  }
-}
 
 /**
  * The site's opening film, starring the GLANCE House:
@@ -47,12 +24,12 @@ function markWelcomed() {
  *      offers. The visitor can grab it and spin it 360° by hand.
  *   3. Enter releases the film into the site.
  *
- * On the homepage's first visit (or forced with ?intro=1) the film plays
- * over a full-viewport navy stage, then releases itself — or immediately via
- * the Enter button. Nothing autoplays sound. Visitors who prefer reduced
- * motion, or who have already seen the film this session, go straight into
- * the site. The page waits behind the film through the same `intro-waiting`
- * gate the pre-paint script in the root layout sets.
+ * The film plays on every visit to the homepage (or on any page when forced
+ * with ?intro=1) over a full-viewport navy stage, then releases itself — or
+ * immediately via the Enter button. Nothing autoplays sound. Visitors who
+ * prefer reduced motion, and light devices that the film would weigh down,
+ * go straight into the site. The page waits behind the film through the same
+ * `intro-waiting` gate the pre-paint script in the root layout sets.
  */
 export function CinematicIntro() {
   const pathname = usePathname();
@@ -62,15 +39,14 @@ export function CinematicIntro() {
   const ctxRef = useRef<{ revert: () => void } | null>(null);
 
   /** Signal "user has entered": the flag is written here — at dismissal —
-   * and never when the film merely starts playing. Writing it at start made
-   * the gate self-annulling under React StrictMode's double effect: the
-   * second run saw "seen" and cancelled the film before it could mount.
+   * and never when the film merely starts playing, so a StrictMode second
+   * effect run cannot cancel the film before it could mount.
    * Teardown is deferred with requestAnimationFrame: reverting gsap.context
    * from inside the timeline's own onComplete would run mid-render tick. */
   const dismiss = useCallback(() => {
     requestAnimationFrame(() => ctxRef.current?.revert());
     ctxRef.current = null;
-    markWelcomed();
+    welcomedThisVisit = true;
     setLeaving(true);
     document.documentElement.classList.remove("intro-waiting");
     document.body.style.overflow = "";
@@ -84,7 +60,6 @@ export function CinematicIntro() {
     const params = new URLSearchParams(window.location.search);
     const forced = params.has("intro");
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const seen = alreadyWelcomed();
 
     /*
      * The film runs a real-time 3D building, which is the single heaviest thing
@@ -107,7 +82,7 @@ export function CinematicIntro() {
       /(^|-)2g/.test(nav.connection?.effectiveType ?? "");
 
     const shouldPlay =
-      !reduced && (forced || (!lightDevice && !seen && pathname === "/"));
+      !reduced && (forced || (!lightDevice && pathname === "/"));
     if (!shouldPlay) {
       // Defensive release: the pre-paint gate in the root layout only hides
       // the stage for unwelcomed home visits, but if the class ever got set
@@ -116,9 +91,6 @@ export function CinematicIntro() {
       document.body.style.overflow = "";
       return;
     }
-    // No storage write here: the flag is set on dismissal (see dismiss),
-    // because writing it while the film is up lets a StrictMode second run
-    // cancel it out before the film is ever seen.
     const show = window.setTimeout(() => {
       setActive(true);
       document.documentElement.classList.add("intro-waiting");

@@ -93,14 +93,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script
           dangerouslySetInnerHTML={{
             // Pre-paint gate: on the homepage hide the page stage before
-            // first paint so the welcome banner plays on a clean stage — but
-            // only when the visitor hasn't already been welcomed this tab
-            // session (sessionStorage marker written at dismissal).
-            // CinematicIntro releases the stage when the banner is dismissed
-            // or absent; reduced-motion visitors skip the banner, so they
-            // skip the gate too.
+            // first paint so the welcome film plays on a clean stage on every
+            // fresh visit. CinematicIntro releases the stage when the film is
+            // dismissed or skipped; reduced-motion visitors never see the
+            // film, so they skip the gate too.
             __html:
-              "try{var reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;var seen=0;try{seen=sessionStorage.getItem('glance:intro-seen')==='1'}catch(e){}if(!reduced&&!seen&&location.pathname==='/'){document.documentElement.classList.add('intro-waiting')}}catch(e){}"
+              "try{var reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;if(!reduced&&location.pathname==='/'){document.documentElement.classList.add('intro-waiting')}}catch(e){}"
           }}
         />
         {children}
