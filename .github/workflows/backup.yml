@@ -29,6 +29,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check required secrets
+        run: |
+          if [ -z "${{ secrets.DATABASE_URL }}" ]; then
+            echo "::error::DATABASE_URL repository secret is not set. Add it under Settings → Secrets and variables → Actions, then re-run this workflow."
+            exit 1
+          fi
+
       - name: Run backup
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
