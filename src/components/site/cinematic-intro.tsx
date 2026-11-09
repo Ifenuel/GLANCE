@@ -1,6 +1,15 @@
 "use client";
 
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
+import {
+  Component,
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { usePathname } from "next/navigation";
 import { isLightDevice } from "@/lib/intro-gate";
 
@@ -16,6 +25,28 @@ const IntroBuildingScene = lazy(
  * fresh visit to the homepage, while moving around inside the same session
  * (home → events → back home) never replays it mid-session. */
 let welcomedThisVisit = false;
+
+/**
+ * A failure inside the 3D building must never take the homepage with it. The
+ * film's copy, its Enter button and the site behind it all work without the
+ * building, so this boundary simply drops the canvas and logs the error
+ * instead of letting it reach the page-level error boundary.
+ */
+class SceneBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.error("[intro] 3D scene failed; continuing without the building", error);
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
 
 /**
  * The site's opening film, starring the GLANCE House:
@@ -320,7 +351,8 @@ export function CinematicIntro() {
           </svg>
 
           {/* Kicker + heading above the house */}
-          <div className="absolute inset-x-0 top-[5vh] flex flex-col items-center px-6 text-center">
+          {/* Clear of the Skip control in the top-right on a phone. */}
+          <div className="absolute inset-x-0 top-[max(5vh,4.75rem)] flex flex-col items-center px-6 text-center">
             <p
               data-extra
               className="text-[11px] font-bold tracking-[0.36em] text-gold-400 uppercase"
@@ -346,14 +378,20 @@ export function CinematicIntro() {
             className="absolute inset-x-0 bottom-[17vh] top-[24vh] cursor-grab touch-none select-none"
           >
             <Suspense fallback={null}>
-              <IntroBuildingScene />
+              <SceneBoundary>
+                <IntroBuildingScene />
+              </SceneBoundary>
             </Suspense>
           </div>
         </div>
 
         {/* Enter: rises after the house settles and stays until dismissed.
             The drag hint lives in the same column so the two never collide. */}
-        <div className="absolute inset-x-0 bottom-[2.5vh] flex flex-col items-center gap-2.5">
+        {/* At least 4rem of clearance: iPhone Safari draws its toolbar over
+            the bottom of the page, and pinning this at 2.5vh alone put the
+            Enter button behind it — visible in a screenshot, impossible to
+            tap, with the site still hidden underneath. */}
+        <div className="absolute inset-x-0 bottom-[max(2.5vh,4rem)] flex flex-col items-center gap-2.5">
           <p
             data-hint
             className="text-[10.5px] font-bold tracking-[0.28em] text-white/65 uppercase"

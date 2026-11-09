@@ -210,6 +210,16 @@ function makeBookPlaqueTexture(small = false) {
     canvas.height - 42 * scale,
   );
 
+  // The texture has to exist before anything can ask to refresh it. It used
+  // to be created below the image wiring, so a cached book cover (the usual
+  // case — the homepage hero already loaded it) called drawBook immediately
+  // and threw "cannot access 'texture' before initialization" from inside
+  // render, which the site error boundary turned into "This page stopped
+  // short." on the whole homepage.
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+
   const drawBook = (img: HTMLImageElement) => {
     try {
       const innerTop = 136 * scale;
@@ -236,12 +246,12 @@ function makeBookPlaqueTexture(small = false) {
 
   const img = new Image();
   img.onload = () => drawBook(img);
+  img.onerror = () => {
+    // The plaque keeps its title-only layout; nothing to do.
+  };
   img.src = "/media/leading-at-27-book.webp";
   if (img.complete && img.naturalWidth > 0) drawBook(img);
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 8;
   return texture;
 }
 
