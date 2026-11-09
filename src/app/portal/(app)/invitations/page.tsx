@@ -101,7 +101,7 @@ export default async function InvitationsPage({
       <Card>
         <div className="flex items-start gap-3">
           <GLANCE className="h-5 w-5 shrink-0 text-gold-600" />
-          <div>
+          <div className="min-w-0">
             <h3 className="text-base font-extrabold text-navy-900">How activation codes work</h3>
             <p className="text-[13px] leading-6 text-ink-500">
               An invitation generates a short code. The invitee types it into the

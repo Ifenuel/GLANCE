@@ -15,14 +15,6 @@ export function PostForm() {
   return (
     <form action={formAction} className="space-y-4">
       <FormMessage state={state} />
-      {state.success ? (
-        <p
-          role="status"
-          className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-[12.5px] font-semibold text-emerald-700"
-        >
-          {state.success}
-        </p>
-      ) : null}
 
       <Field label="Type" htmlFor="post-category" required>
         <select id="post-category" name="category" className={inputClass} defaultValue="NEWS">

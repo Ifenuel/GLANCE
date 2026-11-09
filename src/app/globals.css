@@ -68,6 +68,14 @@
     border-radius: 6px;
   }
 
+  /* A single image can never make a phone page wider than the screen. This
+     is the safety net behind the sizing bug that blew the emblem up to its
+     full intrinsic width and pushed portal pages 32px past a 390px viewport
+     (Safari then kept that offset as you moved between pages). */
+  img {
+    max-width: 100%;
+  }
+
   h1,
   h2,
   h3,

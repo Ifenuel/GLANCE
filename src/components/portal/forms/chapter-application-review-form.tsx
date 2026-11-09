@@ -28,17 +28,6 @@ export function ChapterApplicationReviewForm({
     <form action={formAction} className="space-y-5">
       <input type="hidden" name="id" value={application.id} />
       <FormMessage state={state} />
-      {state.message ? (
-        <p role="alert" className="text-[12.5px] font-semibold text-rose-600">{state.message}</p>
-      ) : null}
-      {state.success ? (
-        <div
-          role="status"
-          className="rounded-xl bg-emerald-50 px-4 py-3 text-[13px] font-semibold text-emerald-700"
-        >
-          {state.success}
-        </div>
-      ) : null}
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field

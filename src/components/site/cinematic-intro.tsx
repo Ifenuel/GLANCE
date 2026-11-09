@@ -36,6 +36,15 @@ export function CinematicIntro() {
   const pathname = usePathname();
   const [active, setActive] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  // Giant blurred glows composited over a live WebGL canvas force iOS Safari
+  // to re-blur the whole screen every frame — the single biggest source of
+  // the lag visitors feel on iPhones. Touch devices keep the glow gradients
+  // but lose the blur; desktop keeps the full cinematic look.
+  const [coarse] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(pointer: coarse)").matches === true,
+  );
   const stageRef = useRef<HTMLDivElement>(null);
   const ctxRef = useRef<{ revert: () => void } | null>(null);
 
@@ -126,6 +135,9 @@ export function CinematicIntro() {
         });
 
         // ── Scene 1: the invitation ────────────────────────────────────
+        // Timings are kept tight on purpose: on phones every idle second in
+        // front of the film feels like lag, so Enter is reachable in under
+        // five seconds while the House still gets its entrance.
         const invite = stage.querySelector<HTMLElement>("[data-invite]");
         if (invite) {
           const lines = invite.querySelectorAll<HTMLElement>("[data-line]");
@@ -136,22 +148,22 @@ export function CinematicIntro() {
               opacity: 1,
               yPercent: 0,
               rotateX: 0,
-              duration: 0.9,
-              stagger: 0.14,
+              duration: 0.7,
+              stagger: 0.1,
               ease: "power4.out",
               transformOrigin: "50% 100%",
             },
-            0.3,
-          ).to(invite, { opacity: 0, y: -24, duration: 0.6, ease: "power2.in" }, 2.8);
+            0.2,
+          ).to(invite, { opacity: 0, y: -24, duration: 0.45, ease: "power2.in" }, 2.0);
         }
 
         // ── Scene 2: the GLANCE House rises as one veil — the building
         // itself is a real-time 3D scene that turns and answers the hand.
-        tl.set("[data-house-scene]", { visibility: "visible" }, 3.2).fromTo(
+        tl.set("[data-house-scene]", { visibility: "visible" }, 2.3).fromTo(
           "[data-house-scene]",
           { opacity: 0 },
-          { opacity: 1, duration: 0.5 },
-          3.2,
+          { opacity: 1, duration: 0.4 },
+          2.3,
         );
 
         const hint = stage.querySelector<HTMLElement>("[data-hint]");
@@ -159,13 +171,13 @@ export function CinematicIntro() {
           tl.fromTo(
             hint,
             { opacity: 0 },
-            { opacity: 1, duration: 0.6 },
-            5.2,
+            { opacity: 1, duration: 0.45 },
+            3.8,
           ).fromTo(
             hint,
             { opacity: 1 },
-            { opacity: 0.55, duration: 1.6, repeat: -1, yoyo: true, ease: "sine.inOut" },
-            6,
+            { opacity: 0.55, duration: 1.2, repeat: -1, yoyo: true, ease: "sine.inOut" },
+            4.4,
           );
         }
 
@@ -174,14 +186,14 @@ export function CinematicIntro() {
         tl.fromTo(
           stage.querySelector<HTMLElement>("[data-enter]"),
           { opacity: 0, y: 26, scale: 0.94 },
-          { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: "back.out(1.6)" },
-          5.6,
+          { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "back.out(1.6)" },
+          4.1,
         )
           .fromTo(
             stage.querySelector<HTMLElement>("[data-footer]"),
             { opacity: 0 },
-            { opacity: 1, duration: 0.8 },
-            5.9,
+            { opacity: 1, duration: 0.6 },
+            4.4,
           )
           .call(() => {
             stage.querySelector<HTMLButtonElement>("[data-enter]")?.focus();
@@ -250,11 +262,11 @@ export function CinematicIntro() {
           {/* Standing light pooling under the building */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-[16%] left-1/2 h-[46vh] w-[120vw] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(234,174,20,0.16)_0%,transparent_60%)] blur-lg sm:blur-2xl"
+            className={`pointer-events-none absolute bottom-[16%] left-1/2 h-[46vh] w-[120vw] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(234,174,20,0.16)_0%,transparent_60%)] ${coarse ? "" : "blur-lg sm:blur-2xl"}`}
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -top-40 left-1/2 h-[420px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(234,174,20,0.08)_0%,transparent_70%)] blur-xl sm:blur-3xl"
+            className={`pointer-events-none absolute -top-40 left-1/2 h-[420px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(234,174,20,0.08)_0%,transparent_70%)] ${coarse ? "" : "blur-xl sm:blur-3xl"}`}
           />
           {/* Far skyline for the building to belong to */}
           <svg

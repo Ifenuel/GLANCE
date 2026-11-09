@@ -21,9 +21,6 @@ export function ReportForm({ chapter }: { chapter: { id: string; name: string; c
     <form action={formAction} className="space-y-5">
       <input type="hidden" name="chapterId" value={chapter.id} />
       <FormMessage state={state} />
-      {state.message ? (
-        <p role="alert" className="text-[12.5px] font-semibold text-rose-600">{state.message}</p>
-      ) : null}
 
 
       <Field

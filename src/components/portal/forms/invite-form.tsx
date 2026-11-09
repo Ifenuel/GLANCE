@@ -21,20 +21,9 @@ export function InviteForm({
 
   return (
     <form action={formAction} className="space-y-5">
+      {/* FormMessage is the single place a result is announced; repeating the
+          success line here printed "Invitation sent to …" twice. */}
       <FormMessage state={state} />
-      {state.error ? (
-        <p role="alert" className="text-[12.5px] font-semibold text-rose-600">
-          {state.error}
-        </p>
-      ) : null}
-      {state.success ? (
-        <div
-          role="status"
-          className="rounded-xl bg-emerald-50 px-4 py-3 text-[13px] font-semibold text-emerald-700"
-        >
-          {state.success}
-        </div>
-      ) : null}
 
       <Field
         label="Email address"

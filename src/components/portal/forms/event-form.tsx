@@ -15,14 +15,6 @@ export function EventForm() {
   return (
     <form action={formAction} className="space-y-4">
       <FormMessage state={state} />
-      {state.success ? (
-        <p
-          role="status"
-          className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-[12.5px] font-semibold text-emerald-700"
-        >
-          {state.success}
-        </p>
-      ) : null}
 
       <Field label="Event title" htmlFor="event-title" required error={state.errors?.title}>
         <input

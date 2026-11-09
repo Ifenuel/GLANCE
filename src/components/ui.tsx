@@ -121,11 +121,14 @@ export function ButtonLink({ href, variant = "default", size = "md", className, 
 export function GLANCE({ className = "h-8 w-8" }: { className?: string }) {
   // eslint-disable-next-line @next/next/no-img-element
   return (
+    // The size comes from className only. Declaring h-auto/w-auto here fought
+    // the caller's h-5/w-5 and lost, so the emblem painted at its full 653px
+    // intrinsic width and pushed whole portal pages wider than a phone screen.
     <img
       src="/_brand/glance-emblem.png"
       alt=""
       aria-hidden="true"
-      className={`h-auto w-auto ${className}`}
+      className={`shrink-0 object-contain ${className}`}
     />
   );
 }

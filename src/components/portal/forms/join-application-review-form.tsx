@@ -30,15 +30,6 @@ export function JoinApplicationReviewForm({
       <input type="hidden" name="applicationId" value={application.id} />
       <FormMessage state={state} />
 
-      {state.success ? (
-        <div
-          role="status"
-          className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] font-semibold text-emerald-800"
-        >
-          {state.success}
-        </div>
-      ) : null}
-
       {decided ? (
         <p className="rounded-xl border border-line bg-navy-50/60 px-4 py-3 text-[13px] text-ink-500">
           This application has already been decided. Create a fresh invitation

@@ -39,14 +39,6 @@ export function AccountForm({
   return (
     <form action={formAction} className="space-y-5">
       <FormMessage state={state} />
-      {state.success ? (
-        <p
-          role="status"
-          className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-[12.5px] font-semibold text-emerald-700"
-        >
-          {state.success}
-        </p>
-      ) : null}
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Full name" htmlFor="account-name" required error={state.errors?.name}>

@@ -14,19 +14,6 @@ export function ChapterForm() {
   return (
     <form action={formAction} className="space-y-5">
       <FormMessage state={state} />
-      {state.error ? (
-        <p role="alert" className="text-[12.5px] font-semibold text-rose-600">
-          {state.error}
-        </p>
-      ) : null}
-      {state.success ? (
-        <div
-          role="status"
-          className="rounded-xl bg-emerald-50 px-4 py-3 text-[13px] font-semibold text-emerald-700"
-        >
-          {state.success}
-        </div>
-      ) : null}
 
       <p className="rounded-xl bg-navy-50 px-4 py-3 text-[12.5px] leading-6 text-navy-700">
         The unique chapter code (e.g. GLN-UI-001) is issued automatically when

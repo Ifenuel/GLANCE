@@ -10,8 +10,11 @@ export const metadata: Metadata = {
 };
 
 export default function LoginPage() {
+  // min-h-dvh, not min-h-screen: on an iPhone 100vh is taller than the
+  // visible area once Safari's toolbar is showing, which pushed the footer
+  // and the bottom of the card under the browser chrome.
   return (
-    <div className="relative flex min-h-screen flex-col justify-between bg-[#040D1A] text-white selection:bg-gold-400 selection:text-navy-950">
+    <div className="relative flex min-h-dvh flex-col justify-between bg-[#040D1A] text-white selection:bg-gold-400 selection:text-navy-950">
       {/* Background Graphic / Scrim matching the reference image */}
       <div
         aria-hidden="true"
