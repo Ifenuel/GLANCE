@@ -980,6 +980,18 @@ html[data-intro-hold="true"] .zip__brand {
 html.intro-waiting .site-stage {
   opacity: 0;
   pointer-events: none;
+  /* Last-resort release, with no script involved: if the film never clears
+     the gate (a chunk that fails to load, a dead animation ticker), the site
+     behind it must still appear instead of leaving a phone on a screen that
+     simply stops. */
+  animation: intro-gate-release 200ms linear 12s forwards;
+}
+
+@keyframes intro-gate-release {
+  to {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 /* ---- Page transitions ----------------------------------------------- */

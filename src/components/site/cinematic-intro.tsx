@@ -110,6 +110,32 @@ export function CinematicIntro() {
     };
   }, [pathname]);
 
+  /** The page behind the film is hidden and locked by this component, so it
+   * must release it if it is ever torn down while the film is still up. */
+  useEffect(() => {
+    return () => {
+      if (!welcomedThisVisit) {
+        document.documentElement.classList.remove("intro-waiting");
+        document.body.style.overflow = "";
+      }
+    };
+  }, []);
+
+  /** Escape hatch for a film that never advances. The Enter button is animated
+   * from opacity 0 by GSAP, so a stalled animation ticker (a busy phone, a
+   * chunk that never loads) would leave a navy screen with no visible way out
+   * and the site hidden behind it. If Enter is still invisible after nine
+   * seconds, the film never started — let the visitor through. */
+  useEffect(() => {
+    if (!active) return;
+    const check = window.setTimeout(() => {
+      const enter = stageRef.current?.querySelector<HTMLElement>("[data-enter]");
+      const opacity = enter ? Number.parseFloat(getComputedStyle(enter).opacity) : 1;
+      if (opacity < 0.05) dismiss();
+    }, 9000);
+    return () => window.clearTimeout(check);
+  }, [active, dismiss]);
+
   /** Drives the film once the stage exists. Everything GSAP creates is made
    * inside one gsap.context whose owner element is the stage, so teardown is
    * a single ctx.revert() — killing tweens by hand (some already completed,
@@ -223,6 +249,18 @@ export function CinematicIntro() {
       }`}
       aria-hidden={leaving}
     >
+      {/* A plain, always-tappable way out. It is deliberately outside the
+          timeline's targets: the button above exists only after GSAP reveals
+          it, and on a phone that has stalled the animation there was nothing
+          to tap at all. */}
+      <button
+        type="button"
+        onClick={dismiss}
+        className="absolute top-4 right-4 z-[60] rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10.5px] font-bold tracking-[0.18em] text-white/85 uppercase backdrop-blur-sm transition-colors hover:border-gold-300 hover:text-white"
+      >
+        Skip intro
+      </button>
+
       <div ref={stageRef} className="absolute inset-0">
         {/* ── Scene 1: the invitation ─────────────────────────────────── */}
         <div
